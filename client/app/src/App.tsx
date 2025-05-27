@@ -7,7 +7,7 @@ function App() {
 
     return (
         <>
-            <div>Django-React</div>
+            <div>Django-React (Database Implemented)</div>
         </>
     );
 }
