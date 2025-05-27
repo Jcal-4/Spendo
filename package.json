@@ -2,7 +2,7 @@
     "name": "root-scripts",
     "private": true,
     "scripts": {
-        "heroku-postbuild": "cd client/app && npm install && npm run build && mkdir -p ../../server/spendo/spendo/client_dist && cp dist/index.html ../../server/spendo/spendo/client_dist/ && cp -r dist/assets ../../server/spendo/spendo/client_dist/"
+        "heroku-postbuild": "cd client/app && npm install && npm run build && mkdir -p ../../server/Spendo/Spendo/client_dist && cp dist/index.html ../../server/Spendo/Spendo/client_dist/ && cp -r dist/assets ../../server/Spendo/Spendo/client_dist/"
     },
     "dependencies": {
         "prettier": "^3.5.3"
