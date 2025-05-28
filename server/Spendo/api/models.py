@@ -23,7 +23,6 @@ class Account(models.Model):
     institution = models.TextField() # I might wanna make this into another table later on
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='accounts')
-    
 class Transaction(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30)
@@ -35,8 +34,3 @@ class Transaction(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='transactions')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='accounts')
     transactiontype = models.ForeignKey(TransactionType, on_delete=models.CASCADE, related_name='transactiontypes')
-    
-    
-
-    
-    
