@@ -13,6 +13,30 @@ class Income(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='incomes')
     income_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
+class TransactionType(models.Model):
+    id = models.AutoField(primary_key=True)
+    type = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+class Account(models.Model):
+    id = models.AutoField(primary_key=True)
+    balance = models.DecimalField(decimal_places=2, default=0.0)
+    institution = models.TextField() # I might wanna make this into another table later on
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='accounts')
     
-    class Meta:
-        db_table = 'income'
+class Transaction(models.models):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=30)
+    payment = models.DecimalField(decimal_places=2, default=0.0)
+    transaction_date = models.DateField(null=True, blank=True)
+    recurring = models.BooleanField(default=False)
+    note = models.CharField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='transactions')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='accounts')
+    transactiontype = models.ForeignKey(TransactionType, on_delete=models.CASCADE, related_name='transactiontypes')
+    
+    
+
+    
+    

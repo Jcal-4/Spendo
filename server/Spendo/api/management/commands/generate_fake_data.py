@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from api.models import User, Income
+from api.models import CustomUser, Income
 from django.utils import timezone
 import random
 
@@ -17,7 +17,7 @@ class Command(BaseCommand):
         income_types = ['Salary', 'Bonus', 'Freelance', 'Investment', 'Gift']
 
         for i in range(users_count):
-            user = User.objects.create(
+            custom_user = CustomUser.objects.create(
                 email=f'user{i}@example.com',
                 username=f'user{i}',
                 first_name=f'First{i}',
@@ -25,13 +25,13 @@ class Command(BaseCommand):
                 password='password',
                 occupation=random.choice(occupations),
             )
-            self.stdout.write(self.style.SUCCESS(f'Created user: {user.username}'))
+            self.stdout.write(self.style.SUCCESS(f'Created user: {custom_user.username}'))
 
             for j in range(incomes_per_user):
                 income = Income.objects.create(
                     income_type=random.choice(income_types),
                     amount=round(random.uniform(100, 5000), 2),
-                    user=user,
+                    user=custom_user,
                     income_date=timezone.now().date(),
                 )
                 self.stdout.write(self.style.SUCCESS(f'  Added income: {income.income_type} (${income.amount})'))
