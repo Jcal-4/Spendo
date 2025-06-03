@@ -1,15 +1,16 @@
 from django.core.management.base import BaseCommand
 import os
+from pathlib import Path
 
 class Command(BaseCommand):
     help = 'Delete all migration files except __init__.py in the migrations directory.'
 
     def handle(self, *args, **options):
-        migrations_dir = os.path.join(os.path.dirname(__file__), '../../../api/migrations')
+        migrations_dir = Path(__file__).parent.parent.parent / 'api' / 'migrations'
         deleted = 0
         for filename in os.listdir(migrations_dir):
             if filename != '__init__.py' and filename.endswith('.py'):
-                file_path = os.path.join(migrations_dir, filename)
+                file_path = migrations_dir / filename
                 os.remove(file_path)
                 self.stdout.write(self.style.SUCCESS(f'Removed {file_path}'))
                 deleted += 1
