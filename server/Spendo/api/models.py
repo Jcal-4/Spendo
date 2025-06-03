@@ -37,5 +37,5 @@ class Transaction(models.Model):
     note = models.CharField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='transactions')
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions', null=True)
     transactiontype = models.ForeignKey(TransactionType, on_delete=models.CASCADE, related_name='transactions')

@@ -82,7 +82,7 @@ class Command(BaseCommand):
                     income_date = timezone.now().date(),
                     incometype = random.choice(income_type_records)
                 )
-                self.stdout.write(self.style.SUCCESS(f'  Added income: {income.income_type} (${income.amount})'))
+                self.stdout.write(self.style.SUCCESS(f'  Added income: {income.incometype} (${income.amount})'))
             
             # For each User being created, create a related Account record
             for j in range(accounts_per_user):
