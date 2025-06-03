@@ -6,10 +6,15 @@ from django.contrib.auth.models import AbstractUser
 class CustomUser(AbstractUser):
     occupation = models.CharField(max_length=30, null=True, blank=True)
         
+class IncomeType(models.Model):
+    id = models.AutoField(primary_key=True)
+    income_type = models.CharField(max_length=30)
+    created_at = models.DateTimeField(auto_now_add=True)
 class Income(models.Model):
     id = models.AutoField(primary_key=True)
-    income_type = models.CharField(max_length=100)
+    name = models.CharField(max_length=30)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    incometype = models.ForeignKey(IncomeType, on_delete=models.CASCADE, related_name='incometypes')
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='incomes')
     income_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -31,6 +36,6 @@ class Transaction(models.Model):
     recurring = models.BooleanField(default=False)
     note = models.CharField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='transactions')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='users')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='accounts', null=True, blank=True)
     transactiontype = models.ForeignKey(TransactionType, on_delete=models.CASCADE, related_name='transactiontypes')
