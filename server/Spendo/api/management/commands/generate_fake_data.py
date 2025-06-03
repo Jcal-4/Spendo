@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from api.models import CustomUser, Income, Account, Transaction, TransactionType
+from api.models import CustomUser, Income, IncomeType, Account, Transaction, TransactionType
 from django.utils import timezone
 import random
 
@@ -10,8 +10,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):      
         parser.add_argument('--users', type=int, default=10, help='Number of users to create')
         parser.add_argument('--incomes', type=int, default=5, help='Number of incomes per user')
-        parser.add_argument('--accounts', type=int, default=2, help='Number of accounts per user')
-        parser.add_argument('--user_transactions', type=int, default=3, help='Number of transactions per user')
+        parser.add_argument('--accounts', type=int, default=6, help='Number of accounts per user')
+        parser.add_argument('--user_transactions', type=int, default=8, help='Number of transactions per user')
 
     # Handle method is the first to initiate when the file is called
     def handle(self, *args, **options):          
@@ -21,8 +21,25 @@ class Command(BaseCommand):
         transaction_per_user = options['user_transactions']
         occupations = ['Engineer', 'Teacher', 'Doctor', 'Artist', 'Developer', 'Designer']
         income_types = ['Salary', 'Bonus', 'Freelance', 'Investment', 'Gift']
-        institutions = ['Checking', 'Savings', "Investment", '401k', 'Trusts', 'Credit']
-        user_transactions = ['ubereats', 'postmates', 'internet', 'att', 'haircut', 'groceries', 'steam game']
+        institutions = [
+            'Checking', 'Savings', 'Investment', '401k', 'Trusts', 'Credit',
+            'Money Market', 'IRA', 'Roth IRA', 'Brokerage', 'Health Savings Account',
+            'Certificate of Deposit', 'Business Account', 'Joint Account', 'Custodial Account',
+            'Education Savings', 'PayPal', 'Venmo', 'Cash App', 'Prepaid Card',
+            'Mortgage', 'Auto Loan', 'Personal Loan', 'Line of Credit', 'Travel Account',
+            'Retirement Account', 'SEP IRA', 'Simple IRA', 'Annuity', 'Foreign Currency Account'
+        ]
+        user_transactions = [
+            'ubereats', 'postmates', 'internet', 'att', 'haircut', 'groceries', 'steam game',
+            'rent', 'mortgage', 'electric bill', 'water bill', 'gas bill', 'phone bill',
+            'netflix', 'spotify', 'amazon purchase', 'target', 'walmart', 'starbucks',
+            'gym membership', 'insurance', 'car payment', 'public transport', 'medical bill',
+            'prescription', 'movie tickets', 'restaurant', 'airline ticket', 'hotel stay',
+            'taxi', 'rideshare', 'parking', 'tuition', 'school supplies', 'childcare',
+            'pet supplies', 'donation', 'gift', 'clothing', 'electronics', 'furniture',
+            'home improvement', 'subscription box', 'laundry', 'dry cleaning', 'coffee shop',
+            'fast food', 'concert tickets', 'sports event', 'theme park', 'books', 'magazine subscription'
+        ]
 
         # Create transaction types
         transaction_types = ['scheduled', 'one-time']
@@ -33,6 +50,17 @@ class Command(BaseCommand):
             )
             transaction_type_records.append(transaction)
             self.stdout.write(self.style.SUCCESS(f'Created Transaction Type: {transaction.type}'))
+            
+        # Create income_types
+        income_types = ['Salary', 'Bonus', 'Freelance', 'Investment', 'Gift', 'Commission', 'Rental', 'Dividend', 'Allowance', 'Pension']
+        income_type_records = list()
+        for income_t in income_types:
+            new_income_type = IncomeType.objects.create(
+                income_type = income_t
+            )
+            income_type_records.append(new_income_type)
+            self.stdout.write(self.style.SUCCESS(f'Created Income Type: {new_income_type}'))
+            
 
         # Create a User record (varrying on the amount requested or default)
         for i in range(users_count):
@@ -49,10 +77,10 @@ class Command(BaseCommand):
             # For each User being created, create a related Income record
             for j in range(incomes_per_user):
                 income = Income.objects.create(
-                    income_type=random.choice(income_types),
-                    amount=round(random.uniform(100, 5000), 2),
+                    amount = round(random.uniform(100, 5000), 2),
                     user=custom_user,
-                    income_date=timezone.now().date(),
+                    income_date = timezone.now().date(),
+                    incometype = random.choice(income_type_records)
                 )
                 self.stdout.write(self.style.SUCCESS(f'  Added income: {income.income_type} (${income.amount})'))
             
