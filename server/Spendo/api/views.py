@@ -7,16 +7,22 @@ from .serializer import CustomUserSerializer
 # Define type of request with api_view
 @api_view(['GET'])
 def get_customusers(request):
-    email = request.GET.get('email')
+    email = request.data.get('email')
+    print(email)
     if email:
         customusers = CustomUser.objects.filter(email=email)
     else:
         customusers = CustomUser.objects.all()
     serializedData = CustomUserSerializer(customusers, many=True).data
+    if not customusers:
+        return Response(f'No users found')
     return Response(serializedData)
 
-
-# Use the views.py in our api app to set up the requests 
-# I had to create the serializer.py file
-# Attribtue of many=True because it can recieve many records (list)
-# Create the urls.py file in the api (do not get this confused with the one already in the Spendo folder)
+@api_view(['GET'])
+def get_customuser_by_username(request, username):
+    try:
+        customuser = CustomUser.objects.get(username=username)
+        serializedData = CustomUserSerializer(customuser, many=False).data
+        return Response(serializedData)
+    except CustomUser.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)

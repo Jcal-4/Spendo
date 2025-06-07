@@ -4,7 +4,7 @@ from .models import CustomUser, IncomeType, Income, Transaction, TransactionType
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = '__all__'
+        fields = ["id", 'username', 'email', 'first_name', 'last_name', 'occupation']
         
 class IncomeSerializer(serializers.ModelSerializer):
     class Meta:
