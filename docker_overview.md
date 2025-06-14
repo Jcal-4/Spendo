@@ -185,6 +185,163 @@ If you want to connect to your Dockerized PostgreSQL database using a GUI tool:
 
 ---
 
+## 🛠️ Single-Container (All-in-One) Setup for Portfolio or Demo Projects
+
+If you want to run both your frontend and backend in a single container (for example, for a portfolio project or simple deployment):
+
+- Place a Dockerfile at the root of your project that:
+    - Builds the frontend and backend using multi-stage builds.
+    - Copies the frontend build output into a directory served by the backend or a static server.
+    - Installs Supervisor (or another process manager) to run both the backend (e.g., Django with Gunicorn) and a static file server for the frontend.
+    - Copies your backend .env file into the image (if needed) and ensures your backend loads environment variables from it (using python-dotenv or similar).
+- Example files:
+    - `Dockerfile` (root): Multi-stage build for both frontend and backend, runs Supervisor.
+    - `supervisord.conf` (root): Supervisor config to run both processes.
+- You do NOT need docker-compose.yml for this setup. Everything runs in one container.
+- This is ideal for portfolio/demo projects where simplicity is more important than scalability.
+
+**See the provided Dockerfile and supervisord.conf in this repo for a working example.**
+
+> **Note:** For production or real-world apps, it is better to use separate containers/services for frontend and backend for flexibility and scalability. This single-container approach is mainly for demos and portfolios.
+
+---
+
+### 📝 Example: Single-Container (All-in-One) Docker Setup
+
+Below is a sample setup for running both a React frontend and Django backend in a single Docker container, suitable for portfolio or demo projects.
+
+#### Dockerfile (place at project root)
+
+```dockerfile
+# Multi-stage Dockerfile for portfolio deployment (frontend + backend)
+
+# 1. Build frontend
+FROM node:20 AS frontend-build
+WORKDIR /app
+COPY client/app/package*.json ./
+RUN npm install
+COPY client/app .
+RUN npm run build
+
+# 2. Build backend
+FROM python:3.12 AS backend-build
+WORKDIR /code
+COPY server/Spendo/requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY server/Spendo .
+
+# 3. Final stage: combine and run both
+FROM python:3.12
+WORKDIR /code
+
+# Copy backend
+COPY --from=backend-build /code /code
+
+# Copy frontend build to Django static files (adjust path if needed)
+COPY --from=frontend-build /app/dist /code/client_dist
+
+# Install supervisor and gunicorn
+RUN pip install gunicorn supervisor
+
+# Add supervisor config
+COPY supervisord.conf /etc/supervisord.conf
+
+EXPOSE 8000 3000
+CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
+```
+
+#### supervisord.conf (place at project root)
+
+```ini
+[supervisord]
+nodaemon=true
+
+[program:django]
+command=gunicorn Spendo.wsgi:application --bind 0.0.0.0:8000
+directory=/code
+
+default_user=root
+
+[program:frontend]
+command=python -m http.server 3000
+directory=/code/client_dist
+```
+
+#### Example requirements.txt (Django backend)
+
+```txt
+Django>=4.0
+djangorestframework
+gunicorn
+psycopg2-binary
+dj-database-url
+python-dotenv
+django-cors-headers
+```
+
+#### Example .env (Django backend)
+
+```env
+DATABASE_URL=postgres://spendo_user:spendo_pass@db:5432/spendo_db
+```
+
+#### Example postgres.env (for local Postgres, if needed)
+
+```env
+POSTGRES_DB=spendo_db
+POSTGRES_USER=spendo_user
+POSTGRES_PASSWORD=spendo_pass
+```
+
+#### Example package.json (React frontend)
+
+```json
+{
+    "name": "app",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "lint": "eslint .",
+        "preview": "vite preview",
+        "start": "vite preview --port $PORT"
+    },
+    "dependencies": {
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.25.0",
+        "@types/react": "^19.1.2",
+        "@types/react-dom": "^19.1.2",
+        "@vitejs/plugin-react": "^4.4.1",
+        "eslint": "^9.25.0",
+        "eslint-plugin-react-hooks": "^5.2.0",
+        "eslint-plugin-react-refresh": "^0.4.19",
+        "globals": "^16.0.0",
+        "typescript": "~5.8.3",
+        "typescript-eslint": "^8.30.1",
+        "vite": "^6.3.5"
+    }
+}
+```
+
+---
+
+This setup will:
+
+- Build both frontend and backend.
+- Serve the frontend static files from /code/client_dist (on port 3000).
+- Run the Django backend with Gunicorn (on port 8000).
+- Use Supervisor to run both processes in a single container.
+- Load .env variables for Django if your backend is set up to do so (e.g., with python-dotenv).
+
+You do NOT need docker-compose.yml for this single-container setup. Use this for portfolio/demo deployments where simplicity is key.
+
+---
+
 This guide helps you set up Docker for most projects. Adjust the Dockerfile for your specific language or framework. If you need a sample Dockerfile for your project, let me know!
 
 ## Note for Ubuntu Users Running Inside WSL
