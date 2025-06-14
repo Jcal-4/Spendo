@@ -149,6 +149,12 @@ DATABASE_URL=postgres://spendo_user:spendo_pass@db:5432/spendo_db
 ALLOWED_HOSTS=localhost
 ```
 
+**`client/app/.env`**
+
+```
+VITE_API_URL=http://localhost:8000/api
+```
+
 ### 4. Running and Managing Containers
 
 - Build and start all services:
