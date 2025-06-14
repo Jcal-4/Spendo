@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-wrmib+4i1-m4sdakvi9(1wm@_b7dapu70#&30%h!lm!_31vawm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['spendo-386e7e9da44d.herokuapp.com','127.0.0.1']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 
 # Application definition
@@ -42,13 +42,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',
-    'rest_framework'
+    'rest_framework',
+    'corsheaders'
 ]
 
 # Use custom user model
 AUTH_USER_MODEL = 'api.CustomUser'
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -57,6 +59,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOWED_ORIGINS = [  
+    "http://localhost:3000",  # React dev server  
+    "http://localhost:5173",  # React is served from 8000  
+    "http://spendo-386e7e9da44d.herokuapp.com" # Your React app's Heroku URL 
+]  
 
 ROOT_URLCONF = 'Spendo.urls'
 
