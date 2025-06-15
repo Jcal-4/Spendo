@@ -123,11 +123,17 @@ services:
             - '8000:8000'
         volumes:
             - ./server/Spendo:/code
+            - ./server/Spendo/Spendo/wait-for-it.sh:/wait-for-it.sh
         env_file:
             - ./server/Spendo/Spendo/.env
         depends_on:
             - db
-        command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+        command:
+            [
+                'sh',
+                '-c',
+                'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py generate_fake_data && python manage.py runserver 0.0.0.0:8000',
+            ]
 
     db:
         image: postgres:16
@@ -160,11 +166,14 @@ CMD ["npm", "run", "dev", "--", "--host"]
 ```dockerfile
 # Backend Dockerfile (Django)
 FROM python:3.12
+RUN apt-get update && apt-get install -y netcat-openbsd
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 WORKDIR /code
 COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+EXPOSE 8000
 ```
 
 ### 2c. Dockerfile and docker-compose.yml Breakdown
@@ -181,11 +190,14 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 #### Backend Dockerfile (`server/Spendo/Dockerfile`)
 
 - `FROM python:3.12` — Uses the official Python 3.12 image as the base for the backend.
+- `RUN apt-get update && apt-get install -y netcat-openbsd` — Installs `netcat-openbsd` for the `wait-for-it.sh` script.
+- `ENV PYTHONDONTWRITEBYTECODE 1` — Prevents Python from writing .pyc files to disk.
+- `ENV PYTHONUNBUFFERED 1` — Ensures Python output is sent straight to terminal (no buffering).
 - `WORKDIR /code` — Sets the working directory inside the container to `/code`.
 - `COPY requirements.txt ./` — Copies the requirements file for dependency installation.
 - `RUN pip install --upgrade pip && pip install -r requirements.txt` — Installs backend dependencies.
 - `COPY . .` — Copies the rest of the backend source code into the container.
-- `CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]` — Starts the Django development server, listening on all interfaces.
+- `EXPOSE 8000` — Exposes port 8000 for the Django development server.
 
 #### docker-compose.yml
 
@@ -542,3 +554,41 @@ sudo docker run hello-world
 ```
 
 If you want a more integrated experience, consider installing Docker Desktop for Windows and enabling WSL integration, which allows you to use Docker from within WSL without starting the daemon manually.
+
+---
+
+## 🛠️ Project-Specific Dockerfile and Compose Changes
+
+### Backend Dockerfile (`server/Spendo/Dockerfile`)
+
+- **Added netcat-openbsd:**
+    - To support the `wait-for-it.sh` script, the following line was added:
+        ```dockerfile
+        RUN apt-get update && apt-get install -y netcat-openbsd
+        ```
+- **No CMD specified:**
+    - The container's startup command is now controlled by `docker-compose.yml` for flexibility.
+
+### docker-compose.yml
+
+- **Backend service changes:**
+    - **Volume mount for wait-for-it.sh:**
+        ```yaml
+        - ./server/Spendo/Spendo/wait-for-it.sh:/wait-for-it.sh
+        ```
+    - **Startup command:**
+        - The backend now waits for the database to be ready, runs migrations, generates fake data, and then starts the server:
+        ```yaml
+        command:
+            [
+                'sh',
+                '-c',
+                'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py generate_fake_data && python manage.py runserver 0.0.0.0:8000',
+            ]
+        ```
+    - **Why this matters:**
+        - Ensures the backend only starts after the database is ready.
+        - Automatically applies migrations and generates fake data on startup.
+        - All startup logic is now easily editable in `docker-compose.yml` without rebuilding the image.
+
+---
