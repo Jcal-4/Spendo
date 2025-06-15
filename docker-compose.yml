@@ -19,11 +19,17 @@ services:
             - '8000:8000'
         volumes:
             - ./server/Spendo:/code
+            - ./server/Spendo/Spendo/wait-for-it.sh:/wait-for-it.sh
         env_file:
             - ./server/Spendo/Spendo/.env
         depends_on:
             - db
-        command: ['sh', '-c', 'python manage.py migrate && python manage.py runserver 0.0.0.0:8000']
+        command:
+            [
+                'sh',
+                '-c',
+                'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py runserver 0.0.0.0:8000',
+            ]
 
     db:
         image: postgres:16

@@ -271,6 +271,54 @@ If you want to connect to your Dockerized PostgreSQL database using a GUI tool:
 
 ---
 
+## 🐞 Common Issues and Fixes in This Project
+
+### 1. Port Conflict on 5432 (PostgreSQL)
+
+**Issue:**
+
+```
+failed to bind host port for 0.0.0.0:5432: ... address already in use
+```
+
+**Cause:** Port 5432 is already used by another PostgreSQL instance on the host.
+**Fix:**
+
+- Stop the native PostgreSQL service with `sudo service postgresql stop` or change the port mapping in `docker-compose.yml` (e.g., `5433:5432`).
+
+### 2. Backend Tries to Connect to DB Before DB is Ready
+
+**Issue:**
+
+```
+django.db.utils.OperationalError: connection to server at "db" ... failed: Connection refused
+```
+
+**Cause:** Docker starts the backend before the database is ready to accept connections.
+**Fix:**
+
+- Added a `wait-for-it.sh` script to the backend service to wait for the database to be ready before running migrations and starting the server.
+- Updated `docker-compose.yml` to use this script in the backend service's command.
+
+### 3. wait-for-it.sh: nc: command not found
+
+**Issue:**
+
+```
+/wait-for-it.sh: line 10: nc: command not found
+```
+
+**Cause:** The backend Docker image did not have `netcat` installed, which is required by the wait-for-it script.
+**Fix:**
+
+- Updated the backend Dockerfile to install `netcat-openbsd` (the correct package for Debian-based images):
+    ```dockerfile
+    RUN apt-get update && apt-get install -y netcat-openbsd
+    ```
+- Rebuilt the Docker images with `docker-compose build`.
+
+---
+
 ## 🛠️ Single-Container (All-in-One) Setup for Portfolio or Demo Projects
 
 If you want to run both your frontend and backend in a single container (for example, for a portfolio project or simple deployment):
