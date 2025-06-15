@@ -56,7 +56,12 @@ services:
             - ./server/Spendo/Spendo/.env
         depends_on:
             - db
-        command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+        command:
+            [
+                'sh',
+                '-c',
+                'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py generate_fake_data && python manage.py runserver 0.0.0.0:8000',
+            ]
 
     db:
         image: postgres:16
@@ -107,6 +112,21 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 - `client/app/.env` (for frontend)
 
 See the `.env.example` files for required variables.
+
+---
+
+## 🗄️ Database Persistence with Docker Volumes
+
+- **Database data is persisted using Docker volumes.**
+- The line:
+    ```yaml
+    - postgres_data:/var/lib/postgresql/data
+    ```
+    in the `db` service ensures that all PostgreSQL data is stored in a Docker-managed volume called `postgres_data`.
+- **Data in Docker volumes is persistent:**
+    - Stopping or removing containers with `docker compose down` does NOT delete your database data.
+    - Data will be available again when you restart your containers with `docker compose up`.
+    - To permanently delete the data, use `docker compose down -v` to remove the volume as well.
 
 ---
 

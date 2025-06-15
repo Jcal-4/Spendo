@@ -205,7 +205,16 @@ EXPOSE 8000
 - `build:` — Specifies the build context (directory) for each service and uses the Dockerfile in that directory.
 - `working_dir:` — Sets the working directory for commands run in the container.
 - `ports:` — Maps container ports to host ports (e.g., `8000:8000` for backend, `5173:5173` for frontend).
-- `volumes:` — Mounts local code into the container for live reload during development.
+- `volumes:` — Mounts local code into the container for live reload during development, **and persists database data across container restarts and removals.**
+    - For example, the line:
+        ```yaml
+        - postgres_data:/var/lib/postgresql/data
+        ```
+        in the `db` service ensures that all PostgreSQL data is stored in a Docker-managed volume called `postgres_data`.
+    - **Data in Docker volumes is persistent:**
+        - Stopping or removing containers with `docker-compose down` does NOT delete your database data.
+        - Data will be available again when you restart your containers with `docker-compose up`.
+        - To permanently delete the data, use `docker-compose down -v` to remove the volume as well.
 - `env_file:` — Loads environment variables from a file into the container.
 - `depends_on:` — Ensures services start in the correct order (e.g., backend waits for db).
 - `command:` — Overrides the default command, useful for running migrations or custom startup scripts.
