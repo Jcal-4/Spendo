@@ -2,6 +2,27 @@
 
 Docker is a platform that allows you to package, distribute, and run applications in lightweight, portable containers. Here’s a high-level overview of how Docker works:
 
+---
+
+## 🧑‍💻 Development vs. Deployment: docker-compose and Single-Container
+
+- It is perfectly fine—and often recommended—to use `docker-compose` for local development, even if you deploy to Heroku (or another platform) with a single-container setup.
+- With `docker-compose`, you can:
+    - Run frontend, backend, and database as separate containers.
+    - Use volume mounts for live code changes and hot-reloading.
+    - Debug and restart services independently.
+    - Mimic a real-world microservices or multi-service environment.
+- For deployment (e.g., Heroku), you use a single-container image for simplicity and compatibility with the platform.
+- Just ensure your code and environment variables work in both setups (e.g., use `.env` files and environment variable fallbacks).
+
+**Summary:**
+
+- Use `docker-compose` for development convenience and flexibility.
+- Use a single-container Dockerfile for simple deployment to platforms like Heroku.
+- Keep your configuration and environment files compatible with both approaches for a smooth workflow.
+
+---
+
 ## 1. Containerization
 
 Docker uses containers to encapsulate an application and all its dependencies (libraries, code, runtime, etc.) into a single package. This ensures the app runs the same way regardless of where it’s deployed.
@@ -32,6 +53,14 @@ Because containers include everything needed to run the app, you can move them b
 ## Key Benefit
 
 With Docker, you don’t need to manually install all the requirements on each PC. You define all dependencies in a Dockerfile, build an image, and anyone can run your app in a container using that image—no need to install dependencies directly on their system. This ensures consistency and saves time when setting up new environments.
+
+---
+
+## 🐳 Installing Docker
+
+To use Docker, you must first install it on your system. Follow the official instructions for your operating system:
+
+- [Get Docker](https://docs.docker.com/get-docker/)
 
 ---
 
@@ -113,6 +142,63 @@ services:
 volumes:
     postgres_data:
 ```
+
+### 2a. Example Dockerfile for Frontend (`client/app/Dockerfile`)
+
+```dockerfile
+# Frontend Dockerfile (Vite/React)
+FROM node:20
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+CMD ["npm", "run", "dev", "--", "--host"]
+```
+
+### 2b. Example Dockerfile for Backend (`server/Spendo/Dockerfile`)
+
+```dockerfile
+# Backend Dockerfile (Django)
+FROM python:3.12
+WORKDIR /code
+COPY requirements.txt ./
+RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY . .
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+```
+
+### 2c. Dockerfile and docker-compose.yml Breakdown
+
+#### Frontend Dockerfile (`client/app/Dockerfile`)
+
+- `FROM node:20` — Uses the official Node.js 20 image as the base for building and running the frontend.
+- `WORKDIR /app` — Sets the working directory inside the container to `/app`.
+- `COPY package*.json ./` — Copies `package.json` and `package-lock.json` for efficient dependency installation.
+- `RUN npm install` — Installs frontend dependencies.
+- `COPY . .` — Copies the rest of the frontend source code into the container.
+- `CMD ["npm", "run", "dev", "--", "--host"]` — Starts the Vite development server, accessible from outside the container.
+
+#### Backend Dockerfile (`server/Spendo/Dockerfile`)
+
+- `FROM python:3.12` — Uses the official Python 3.12 image as the base for the backend.
+- `WORKDIR /code` — Sets the working directory inside the container to `/code`.
+- `COPY requirements.txt ./` — Copies the requirements file for dependency installation.
+- `RUN pip install --upgrade pip && pip install -r requirements.txt` — Installs backend dependencies.
+- `COPY . .` — Copies the rest of the backend source code into the container.
+- `CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]` — Starts the Django development server, listening on all interfaces.
+
+#### docker-compose.yml
+
+- `services:` — Defines each containerized service (frontend, backend, db).
+- `build:` — Specifies the build context (directory) for each service and uses the Dockerfile in that directory.
+- `working_dir:` — Sets the working directory for commands run in the container.
+- `ports:` — Maps container ports to host ports (e.g., `8000:8000` for backend, `5173:5173` for frontend).
+- `volumes:` — Mounts local code into the container for live reload during development.
+- `env_file:` — Loads environment variables from a file into the container.
+- `depends_on:` — Ensures services start in the correct order (e.g., backend waits for db).
+- `command:` — Overrides the default command, useful for running migrations or custom startup scripts.
+
+This breakdown should help you understand what each part of the Docker and Compose setup does and why it's needed for a smooth development workflow.
 
 ### 3. Environment Files
 
@@ -342,7 +428,49 @@ You do NOT need docker-compose.yml for this single-container setup. Use this for
 
 ---
 
-This guide helps you set up Docker for most projects. Adjust the Dockerfile for your specific language or framework. If you need a sample Dockerfile for your project, let me know!
+### ✅ Single-Container Setup: Quick Checklist & Notes
+
+- You do NOT need separate Dockerfiles in the frontend or backend folders for this setup. The single root-level Dockerfile handles building both the frontend and backend using multi-stage builds.
+- Only use nested (per-service) Dockerfiles if you want to build and run the frontend and backend as separate containers (e.g., with docker-compose).
+- For this all-in-one approach:
+    - The root Dockerfile builds the frontend, then the backend, then combines them in the final image.
+    - Supervisor runs both the Django backend and serves the built frontend static files.
+    - The frontend is served as static files by Django (not via the Vite dev server).
+
+#### Steps to Build & Run
+
+1. Place your `.env` file for Django in the correct directory (where `manage.py` can find it, e.g., `/code/.env` inside the container).
+2. Build the Docker image:
+    ```bash
+    docker build -t spendo-app .
+    ```
+3. Run the container:
+    ```bash
+    docker run -p 8000:8000 spendo-app
+    ```
+4. Access your app at `http://localhost:8000/`.
+
+#### Troubleshooting
+
+- If you see `DisallowedHost` errors, ensure your `.env` contains:
+    ```
+    ALLOWED_HOSTS=localhost,127.0.0.1
+    ```
+    and rebuild the image.
+- If Django crashes with `ModuleNotFoundError: No module named 'django'`, make sure the Dockerfile installs requirements in the final stage.
+- If you update `.env` or dependencies, rebuild the image and restart the container.
+- To debug inside the container:
+    ```bash
+    docker run -it spendo-app /bin/bash
+    # Then run:
+    python manage.py runserver 0.0.0.0:8000
+    ```
+
+---
+
+This approach is ideal for demos and portfolios. For production or scalable deployments, use separate containers and Dockerfiles for each service with docker-compose or Kubernetes.
+
+---
 
 ## Note for Ubuntu Users Running Inside WSL
 

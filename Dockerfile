@@ -25,6 +25,10 @@ COPY --from=backend-build /code /code
 # Copy frontend build to Django static files (adjust path if needed)
 COPY --from=frontend-build /app/dist /code/client_dist
 
+# Install Python dependencies in the final image
+COPY server/Spendo/requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
 # Install supervisor and gunicorn
 RUN pip install gunicorn supervisor
 
