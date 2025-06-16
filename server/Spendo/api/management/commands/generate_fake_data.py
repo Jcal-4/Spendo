@@ -45,34 +45,40 @@ class Command(BaseCommand):
         transaction_types = ['scheduled', 'one-time']
         transaction_type_records = list()
         for transaction in transaction_types:
-            transaction = TransactionType.objects.create(
-                type = transaction
-            )
-            transaction_type_records.append(transaction)
-            self.stdout.write(self.style.SUCCESS(f'Created Transaction Type: {transaction.type}'))
-            
+            transaction_obj, created = TransactionType.objects.get_or_create(type=transaction)
+            transaction_type_records.append(transaction_obj)
+            if created:
+                self.stdout.write(self.style.SUCCESS(f'Created Transaction Type: {transaction_obj.type}'))
+            else:
+                self.stdout.write(self.style.WARNING(f'Found existing Transaction Type: {transaction_obj.type}'))
+        
         # Create income_types
         income_types = ['Salary', 'Bonus', 'Freelance', 'Investment', 'Gift', 'Commission', 'Rental', 'Dividend', 'Allowance', 'Pension']
         income_type_records = list()
         for income_t in income_types:
-            new_income_type = IncomeType.objects.create(
-                income_type = income_t
-            )
+            new_income_type, created = IncomeType.objects.get_or_create(income_type=income_t)
             income_type_records.append(new_income_type)
-            self.stdout.write(self.style.SUCCESS(f'Created Income Type: {new_income_type}'))
-            
-
+            if created:
+                self.stdout.write(self.style.SUCCESS(f'Created Income Type: {new_income_type}'))
+            else:
+                self.stdout.write(self.style.WARNING(f'Found existing Income Type: {new_income_type}'))
+        
         # Create a User record (varrying on the amount requested or default)
         for i in range(users_count):
-            custom_user = CustomUser.objects.create(
+            custom_user, created = CustomUser.objects.get_or_create(
                 email=f'user{i}@example.com',
-                username=f'user{i}',
-                first_name=f'First{i}',
-                last_name=f'Last{i}',
-                password='password',
-                occupation=random.choice(occupations),
+                defaults={
+                    'username': f'user{i}',
+                    'first_name': f'First{i}',
+                    'last_name': f'Last{i}',
+                    'password': 'password',
+                    'occupation': random.choice(occupations),
+                }
             )
-            self.stdout.write(self.style.SUCCESS(f'Created user: {custom_user.username}'))
+            if created:
+                self.stdout.write(self.style.SUCCESS(f'Created user: {custom_user.username}'))
+            else:
+                self.stdout.write(self.style.WARNING(f'Found existing user: {custom_user.username}'))
 
             # For each User being created, create a related Income record
             for j in range(incomes_per_user):
