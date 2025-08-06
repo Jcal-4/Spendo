@@ -1,6 +1,7 @@
 // import { useState } from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import HeaderMenu from './header-menu/headerMegaMenu'
 // import "./index.css"
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -42,6 +43,7 @@ function Homepage() {
 
     return (
         <>
+            <HeaderMenu></HeaderMenu>
             <button onClick={handleClick}>redirect</button>
             <p>Testing</p>
         </>

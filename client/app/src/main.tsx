@@ -13,7 +13,7 @@ createRoot(document.getElementById('root')!).render(
         <MantineProvider>
             <BrowserRouter>
                 <Routes>
-                    <Route path="" element={<Homepage />} />
+                    <Route path="/" element={<Homepage />} />
                 </Routes>
                 <Routes>
                     <Route path="/contact" element={<ContactPage />} />
