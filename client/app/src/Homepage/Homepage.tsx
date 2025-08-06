@@ -1,7 +1,8 @@
 // import { useState } from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HeaderMenu from './header-menu/headerMegaMenu'
+import HeaderMenu from '../components/header-menu/headerMegaMenu';
+import Footer from '../components/footer/Footer';
 // import "./index.css"
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -10,8 +11,8 @@ function Homepage() {
     const navigate = useNavigate();
 
     const handleClick = () => {
-        navigate('/contact')
-    }
+        navigate('/contact');
+    };
 
     useEffect(() => {
         console.log(apiUrl);
@@ -46,6 +47,7 @@ function Homepage() {
             <HeaderMenu></HeaderMenu>
             <button onClick={handleClick}>redirect</button>
             <p>Testing</p>
+            <Footer />
         </>
     );
 }
