@@ -15,7 +15,7 @@ import {
     Text,
     ThemeIcon,
     UnstyledButton,
-    useMantineTheme
+    useMantineTheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import classes from './HeaderMegaMenu.module.css';
@@ -60,7 +60,7 @@ export function HeaderMegaMenu() {
     const [linksOpened, { toggle: toggleLinks }] = useDisclosure(false);
     const theme = useMantineTheme();
     const navigate = useNavigate();
-    
+
     const links = mockdata.map((item) => (
         <UnstyledButton className={classes.subLink} key={item.title}>
             <Group wrap="nowrap" align="flex-start">
@@ -80,18 +80,20 @@ export function HeaderMegaMenu() {
     ));
 
     const redirectURL = (URL) => {
-        console.log('URL--> ' , URL)
+        console.log('URL--> ', URL);
         if (URL === 'LOGIN') {
-            navigate('/login')
+            navigate('/login');
         }
-    }
+    };
 
     return (
         <Box pb={120}>
             <header className={classes.header}>
                 <Group justify="space-between" h="100%">
-                    <ThemeToggle />
-                    <Group h="100%" gap={0} visibleFrom="sm">
+                    <Group>
+                        <ThemeToggle />
+                    </Group>
+                    <Group  h="100%" gap={0} visibleFrom="sm">
                         <Text size="xl" fw={900} variant="gradient" gradient={{ from: 'cyan', to: 'green', deg: 332 }}>
                             Spendo
                         </Text>
@@ -103,8 +105,6 @@ export function HeaderMegaMenu() {
                         </Button>
                         <Button>Sign up</Button>
                     </Group>
-
-                    <Burger opened={drawerOpened} onClick={toggleDrawer} hiddenFrom="sm" />
                 </Group>
             </header>
         </Box>
