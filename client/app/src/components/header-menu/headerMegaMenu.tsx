@@ -20,6 +20,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import classes from './HeaderMegaMenu.module.css';
 import ThemeToggle from '../theme-toggle/ThemeToggle';
+import { useNavigate } from 'react-router-dom';
 
 const mockdata = [
     {
@@ -58,7 +59,8 @@ export function HeaderMegaMenu() {
     const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
     const [linksOpened, { toggle: toggleLinks }] = useDisclosure(false);
     const theme = useMantineTheme();
-
+    const navigate = useNavigate();
+    
     const links = mockdata.map((item) => (
         <UnstyledButton className={classes.subLink} key={item.title}>
             <Group wrap="nowrap" align="flex-start">
@@ -77,8 +79,16 @@ export function HeaderMegaMenu() {
         </UnstyledButton>
     ));
 
+    const redirectURL = (URL) => {
+        console.log('URL--> ' , URL)
+        if (URL === 'LOGIN') {
+            navigate('/login')
+        }
+    }
+
     return (
         <Box pb={120}>
+
             <header className={classes.header}>
                 <Group justify="space-between" h="100%">
                     <ThemeToggle />
@@ -87,7 +97,7 @@ export function HeaderMegaMenu() {
                     </Group>
 
                     <Group visibleFrom="sm">
-                        <Button variant="default">Log in</Button>
+                        <Button onClick={() => redirectURL('LOGIN')} variant="default">Log in</Button>
                         <Button>Sign up</Button>
                     </Group>
 

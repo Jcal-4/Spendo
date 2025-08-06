@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // import App from './App.tsx';
 import Homepage from './Homepage/Homepage.tsx';
 import ContactPage from './contact-page/ContactPage.tsx';
+import AuthenticationPage from './authentication-page/AuthenticationPage';
 import '@mantine/core/styles.css';
 import { MantineProvider } from '@mantine/core';
 
@@ -17,6 +18,9 @@ createRoot(document.getElementById('root')!).render(
                 </Routes>
                 <Routes>
                     <Route path="/contact" element={<ContactPage />} />
+                </Routes>
+                <Routes>
+                    <Route path="/login" element={<AuthenticationPage />} />
                 </Routes>
             </BrowserRouter>
         </MantineProvider>

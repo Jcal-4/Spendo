@@ -45,8 +45,6 @@ function Homepage() {
     return (
         <>
             <HeaderMenu></HeaderMenu>
-            <button onClick={handleClick}>redirect</button>
-            <p>Testing</p>
             <Footer />
         </>
     );
