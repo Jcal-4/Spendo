@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderMenu from '../components/header-menu/headerMegaMenu';
 import Footer from '../components/footer/Footer';
+import FeaturesCards from './features-cards/FeaturesCards'
 // import "./index.css"
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -44,7 +45,8 @@ function Homepage() {
 
     return (
         <>
-            <HeaderMenu></HeaderMenu>
+            <HeaderMenu/>
+            <FeaturesCards/>
             <Footer />
         </>
     );

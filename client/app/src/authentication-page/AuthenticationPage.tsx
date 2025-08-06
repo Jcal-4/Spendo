@@ -7,7 +7,7 @@ export function AuthenticationPage() {
         <div className={classes.wrapper}>
             <Paper className={classes.form}>
                 <Title order={2} className={classes.title}>
-                    Welcome back to Mantine!
+                    Welcome back to Spendo!
                 </Title>
 
                 <TextInput label="Email address" placeholder="hello@gmail.com" size="md" radius="md" />
