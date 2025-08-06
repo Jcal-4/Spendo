@@ -15,7 +15,7 @@ import {
     Text,
     ThemeIcon,
     UnstyledButton,
-    useMantineTheme,
+    useMantineTheme
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import classes from './HeaderMegaMenu.module.css';
@@ -88,16 +88,19 @@ export function HeaderMegaMenu() {
 
     return (
         <Box pb={120}>
-
             <header className={classes.header}>
                 <Group justify="space-between" h="100%">
                     <ThemeToggle />
                     <Group h="100%" gap={0} visibleFrom="sm">
-                        <p>Spendo</p>
+                        <Text size="xl" fw={900} variant="gradient" gradient={{ from: 'cyan', to: 'green', deg: 332 }}>
+                            Spendo
+                        </Text>
                     </Group>
 
                     <Group visibleFrom="sm">
-                        <Button onClick={() => redirectURL('LOGIN')} variant="default">Log in</Button>
+                        <Button onClick={() => redirectURL('LOGIN')} variant="default">
+                            Log in
+                        </Button>
                         <Button>Sign up</Button>
                     </Group>
 
