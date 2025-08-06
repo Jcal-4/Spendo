@@ -8,6 +8,10 @@ const apiUrl = import.meta.env.VITE_API_URL;
 function Homepage() {
     const navigate = useNavigate();
 
+    const handleClick = () => {
+        navigate('/contact')
+    }
+
     useEffect(() => {
         console.log(apiUrl);
         fetchData();
@@ -38,6 +42,7 @@ function Homepage() {
 
     return (
         <>
+            <button onClick={handleClick}>redirect</button>
             <p>Testing</p>
         </>
     );
