@@ -21,6 +21,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('', TemplateView.as_view(template_name="index.html")),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls'))
 ]
@@ -31,4 +32,5 @@ urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # Catch-all route for React (must be last, and must not match static requests)
 urlpatterns += [
     re_path(r'^(?!static/).*$', TemplateView.as_view(template_name="index.html")),
+    # re_path(r'^(?!static/).*$', TemplateView.as_view(template_name="index.html")),
 ]

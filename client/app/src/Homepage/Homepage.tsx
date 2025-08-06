@@ -1,11 +1,13 @@
 // import { useState } from 'react';
-// import reactLogo from './assets/react.svg';
-// import viteLogo from '/vite.svg';
-import './App.css';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+// import "./index.css"
+
 const apiUrl = import.meta.env.VITE_API_URL;
 
-function App() {
+function Homepage() {
+    const navigate = useNavigate();
+
     useEffect(() => {
         console.log(apiUrl);
         fetchData();
@@ -19,7 +21,7 @@ function App() {
             },
         })
             .then((response) => {
-                console.log(response)
+                console.log(response);
                 if (!response.ok) {
                     throw new Error(`HTTP Error! Status: ${response.status}`);
                 }
@@ -36,9 +38,9 @@ function App() {
 
     return (
         <>
-            <div>Django-React (Database Implemented).</div>
+            <p>Testing</p>
         </>
     );
 }
 
-export default App;
+export default Homepage;
