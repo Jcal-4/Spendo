@@ -103,7 +103,7 @@ export function HeaderMegaMenu() {
                         <Button onClick={() => redirectURL('LOGIN')} variant="default">
                             Log in
                         </Button>
-                        <Button>Sign up</Button>
+                        {/* <Button>Sign up</Button> */}
                     </Group>
                 </Group>
             </header>
