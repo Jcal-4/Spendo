@@ -49,9 +49,10 @@ export function AuthenticationPage() {
                         </Title>
 
                         <TextInput label="Email address" placeholder="hello@gmail.com" size="md" radius="md" />
-                        <PasswordInput label="Password" placeholder="Your password" mt="md" size="md" radius="md" />
+                        <PasswordInput label="Create password" placeholder="Create password" mt="md" size="md" radius="md" />
+                        <PasswordInput label="Confirm Password" placeholder="Confirm Password" mt="md" size="md" radius="md" />
                         <Button fullWidth mt="xl" size="md" radius="md">
-                            Login
+                            Register
                         </Button>
 
                         <Text ta="center" mt="md">
