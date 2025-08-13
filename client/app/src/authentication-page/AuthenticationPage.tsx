@@ -41,11 +41,6 @@ export function AuthenticationPage() {
 
     return (
         <>
-            {state.isAuthenticated && state.user && (
-                <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                    Logged in as <b>{state.user.username}</b>
-                </div>
-            )}
             {!isRegister ? (
                 <div className={classes.wrapper}>
                     <Paper className={classes.form}>

@@ -47,7 +47,6 @@ function Homepage() {
 
     return (
         <>  
-            {state.isAuthenticated && <h1>{state.user.username}</h1>}
             <HeaderMenu/>
             <FeaturesCards/>
             <Footer />

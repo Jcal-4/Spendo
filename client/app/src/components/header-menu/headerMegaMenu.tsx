@@ -21,6 +21,7 @@ import { useDisclosure } from '@mantine/hooks';
 import classes from './HeaderMegaMenu.module.css';
 import ThemeToggle from '../theme-toggle/ThemeToggle';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/useAuth';
 
 const mockdata = [
     {
@@ -60,6 +61,7 @@ export function HeaderMegaMenu() {
     const [linksOpened, { toggle: toggleLinks }] = useDisclosure(false);
     const theme = useMantineTheme();
     const navigate = useNavigate();
+    const [state, { logout }] = useAuth();
 
     const links = mockdata.map((item) => (
         <UnstyledButton className={classes.subLink} key={item.title}>
@@ -93,16 +95,27 @@ export function HeaderMegaMenu() {
                     <Group>
                         <ThemeToggle />
                     </Group>
-                    <Group  h="100%" gap={0} visibleFrom="sm">
+                    <Group h="100%" gap={0} visibleFrom="sm">
                         <Text size="xl" fw={900} variant="gradient" gradient={{ from: 'cyan', to: 'green', deg: 332 }}>
                             Spendo
                         </Text>
                     </Group>
 
                     <Group visibleFrom="sm">
-                        <Button onClick={() => redirectURL('LOGIN')} variant="default">
-                            Log in
-                        </Button>
+                        {state.isAuthenticated && state.user ? (
+                            <div style={{ display: 'flex' }}>
+                                <Text size="xl" fw={900} variant="gradient" gradient={{ from: 'cyan', to: 'green', deg: 332 }}>
+                                    {state.user.username}
+                                </Text>
+                                <Button onClick={logout} variant="default">
+                                    Logout
+                                </Button>
+                            </div>
+                        ) : (
+                            <Button onClick={() => redirectURL('LOGIN')} variant="default">
+                                Log in
+                            </Button>
+                        )}
                         {/* <Button>Sign up</Button> */}
                     </Group>
                 </Group>
