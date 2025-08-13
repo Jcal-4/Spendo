@@ -40,7 +40,7 @@ export function HeaderMegaMenu() {
     };
 
     return (
-        <Box >
+        <Box>
             <header className={classes.header}>
                 <Group justify="space-between" h="100%">
                     <Group>
@@ -55,7 +55,7 @@ export function HeaderMegaMenu() {
                     <Group visibleFrom="sm">
                         {state.isAuthenticated && state.user ? (
                             <div style={{ display: 'flex' }}>
-                                <Text size="xl" fw={900} variant="gradient" gradient={{ from: 'cyan', to: 'green', deg: 332 }}>
+                                <Text Text fw={500} size="sm" lh={1} mr={3}>
                                     Welcome, {state.user.username}!
                                 </Text>
                                 {/* <Button onClick={logout} variant="default">

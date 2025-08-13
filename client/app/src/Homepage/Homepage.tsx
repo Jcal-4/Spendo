@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderMenu from '../components/header-menu/headerMegaMenu';
-import Footer from '../components/footer/Footer';
+import FooterLinks from '../components/footer/FooterLinks';
 import FeaturesCards from './features-cards/FeaturesCards';
 import { useAuth } from '../contexts/useAuth';
 import { NavbarMinimal } from '../components/navbar/NavbarMinimal';
@@ -56,11 +56,13 @@ function Homepage() {
                     {!state.isAuthenticated && (
                         <div className="homepage-main-content">
                             <HeroText />
-                            <FeaturesCards />
+                            <div>
+                                <FeaturesCards />
+                            </div>
                         </div>
                     )}
                 </div>
-                <Footer />
+                <FooterLinks />
             </div>
         </>
     );
