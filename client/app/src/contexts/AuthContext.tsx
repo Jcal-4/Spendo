@@ -64,7 +64,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const logout = async () => {
-        await fetch('/logout/', { method: 'POST', credentials: 'include' });
+        // Fetch CSRF token first
+        await fetch(`${apiUrl}/csrf/`, { credentials: 'include' });
+        const csrftoken = getCookie('csrftoken');
+        await fetch(`${apiUrl}/logout/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken || '',
+            },
+            credentials: 'include',
+        });
         dispatch({ type: 'CLEAR_USER' });
     };
 
