@@ -2,12 +2,32 @@ import { Anchor, Button, Checkbox, Paper, PasswordInput, Text, TextInput, Title 
 import classes from './AuthenticationPage.module.css';
 import { useEffect, useState } from 'react';
 
+import { useAuth } from '../contexts/useAuth';
+
 export function AuthenticationPage() {
     const [isRegister, setIsRegister] = useState<boolean>(false);
+    const [state, { login }] = useAuth();
+    const [form, setForm] = useState({ username: '', password: '' });
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        console.log(isRegister);
-    }, []);
+        console.log(form);
+    }, [form]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        console.log('handling submit');
+        e.preventDefault();
+        try {
+            await login(form);
+            navigate('/');
+        } catch (e) {
+            setError('Invalid credentials.');
+        }
+    };
 
     const startRegistration = (): void => {
         setIsRegister(true);
@@ -19,6 +39,11 @@ export function AuthenticationPage() {
 
     return (
         <>
+            {state.isAuthenticated && state.user && (
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                    Logged in as <b>{state.user.username}</b>
+                </div>
+            )}
             {!isRegister ? (
                 <div className={classes.wrapper}>
                     <Paper className={classes.form}>
@@ -26,10 +51,25 @@ export function AuthenticationPage() {
                             Welcome back to Spendo!
                         </Title>
 
-                        <TextInput label="Email address" placeholder="hello@gmail.com" size="md" radius="md" />
-                        <PasswordInput label="Password" placeholder="Your password" mt="md" size="md" radius="md" />
+                        <TextInput
+                            name="username"
+                            onChange={handleChange}
+                            label="Username"
+                            placeholder="Your Username"
+                            size="md"
+                            radius="md"
+                        />
+                        <PasswordInput
+                            name="password"
+                            onChange={handleChange}
+                            label="Password"
+                            placeholder="Your password"
+                            mt="md"
+                            size="md"
+                            radius="md"
+                        />
                         <Checkbox label="Keep me logged in" mt="xl" size="md" />
-                        <Button fullWidth mt="xl" size="md" radius="md">
+                        <Button onClick={handleSubmit} fullWidth mt="xl" size="md" radius="md">
                             Login
                         </Button>
 

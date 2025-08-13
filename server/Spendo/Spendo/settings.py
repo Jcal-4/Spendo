@@ -60,11 +60,23 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 CORS_ALLOWED_ORIGINS = [  
     "http://localhost:3000",  # React dev server  
     "http://localhost:5173",  # React is served from 8000  
     "http://spendo-386e7e9da44d.herokuapp.com" # Your React app's Heroku URL 
 ]  
+
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://spendo-386e7e9da44d.herokuapp.com"
+]
 
 ROOT_URLCONF = 'Spendo.urls'
 

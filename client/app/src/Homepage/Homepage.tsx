@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import HeaderMenu from '../components/header-menu/headerMegaMenu';
 import Footer from '../components/footer/Footer';
 import FeaturesCards from './features-cards/FeaturesCards'
+import { useAuth } from '../contexts/useAuth'
 // import "./index.css"
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 function Homepage() {
+    const [state] = useAuth();
     const navigate = useNavigate();
 
     const handleClick = () => {
@@ -20,7 +22,7 @@ function Homepage() {
         fetchData();
     }, []);
 
-    const fetchData = () => {
+    const fetchData = (): void => {
         fetch(`${apiUrl}/customusers/`, {
             method: 'GET',
             headers: {
@@ -44,7 +46,8 @@ function Homepage() {
     };
 
     return (
-        <>
+        <>  
+            {state.isAuthenticated && <h1>{state.user.username}</h1>}
             <HeaderMenu/>
             <FeaturesCards/>
             <Footer />

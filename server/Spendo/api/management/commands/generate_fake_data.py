@@ -64,6 +64,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f'Found existing Income Type: {new_income_type}'))
         
         # Create a User record (varrying on the amount requested or default)
+
         for i in range(users_count):
             custom_user, created = CustomUser.objects.get_or_create(
                 email=f'user{i}@example.com',
@@ -71,11 +72,12 @@ class Command(BaseCommand):
                     'username': f'user{i}',
                     'first_name': f'First{i}',
                     'last_name': f'Last{i}',
-                    'password': 'password',
                     'occupation': random.choice(occupations),
                 }
             )
             if created:
+                custom_user.set_password('password')
+                custom_user.save()
                 self.stdout.write(self.style.SUCCESS(f'Created user: {custom_user.username}'))
             else:
                 self.stdout.write(self.style.WARNING(f'Found existing user: {custom_user.username}'))
