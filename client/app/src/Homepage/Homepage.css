@@ -5,6 +5,16 @@
 }
 
 .homepage-container {
-    display: flex;
+    /* display: flex; */
+    justify-content: center;
+    min-width: 1000px;
     height: 674px;
+}
+
+.homepage-main-content {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 100px;
+    min-width: 1000px;
+    /* padding-bottom: 100px; */
 }

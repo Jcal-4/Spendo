@@ -6,6 +6,7 @@ import Footer from '../components/footer/Footer';
 import FeaturesCards from './features-cards/FeaturesCards';
 import { useAuth } from '../contexts/useAuth';
 import { NavbarMinimal } from '../components/navbar/NavbarMinimal';
+import { HeroText } from './hero-section/HeroText';
 import './Homepage.css';
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -52,7 +53,12 @@ function Homepage() {
                 <HeaderMenu />
                 <div className="homepage-container">
                     <NavbarMinimal />
-                    <FeaturesCards />
+                    {!state.isAuthenticated && (
+                        <div className="homepage-main-content">
+                            <HeroText />
+                            <FeaturesCards />
+                        </div>
+                    )}
                 </div>
                 <Footer />
             </div>
