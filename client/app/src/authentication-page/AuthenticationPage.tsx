@@ -1,10 +1,12 @@
 import { Anchor, Button, Checkbox, Paper, PasswordInput, Text, TextInput, Title } from '@mantine/core';
 import classes from './AuthenticationPage.module.css';
+import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '../contexts/useAuth';
 
 export function AuthenticationPage() {
+    const navigate = useNavigate();
     const [isRegister, setIsRegister] = useState<boolean>(false);
     const [state, { login }] = useAuth();
     const [form, setForm] = useState({ username: '', password: '' });
