@@ -8,7 +8,7 @@ export function HeroText() {
             <Dots className={classes.dots} style={{ left: -380, top: 0 }} />
             <Dots className={classes.dots} style={{ left: -280, top: 0 }} />
             <Dots className={classes.dots} style={{ left: -380, top: 140 }} />
-            <Dots className={classes.dots} style={{ right: -380, top: 60 }} />
+            <Dots className={classes.dots} style={{ right: -360, top: 60 }} />
 
             <div className={classes.inner}>
                 <Title className={classes.title}>
