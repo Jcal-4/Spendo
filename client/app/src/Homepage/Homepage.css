@@ -1,0 +1,10 @@
+.homepage-wrapper {
+    display: flex;
+    flex-direction: column;
+    /* gap: 20px; */
+}
+
+.homepage-container {
+    display: flex;
+    height: 674px;
+}

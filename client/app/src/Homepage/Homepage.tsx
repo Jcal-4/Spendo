@@ -3,9 +3,10 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderMenu from '../components/header-menu/headerMegaMenu';
 import Footer from '../components/footer/Footer';
-import FeaturesCards from './features-cards/FeaturesCards'
-import { useAuth } from '../contexts/useAuth'
-// import "./index.css"
+import FeaturesCards from './features-cards/FeaturesCards';
+import { useAuth } from '../contexts/useAuth';
+import { NavbarMinimal } from '../components/navbar/NavbarMinimal';
+import './Homepage.css';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -46,10 +47,15 @@ function Homepage() {
     };
 
     return (
-        <>  
-            <HeaderMenu/>
-            <FeaturesCards/>
-            <Footer />
+        <>
+            <div className="homepage-wrapper">
+                <HeaderMenu />
+                <div className="homepage-container">
+                    <NavbarMinimal />
+                    <FeaturesCards />
+                </div>
+                <Footer />
+            </div>
         </>
     );
 }
