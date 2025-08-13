@@ -47,28 +47,29 @@ export function AuthenticationPage() {
                         <Title order={2} className={classes.title}>
                             Welcome back to Spendo!
                         </Title>
-
-                        <TextInput
-                            name="username"
-                            onChange={handleChange}
-                            label="Username"
-                            placeholder="Your Username"
-                            size="md"
-                            radius="md"
-                        />
-                        <PasswordInput
-                            name="password"
-                            onChange={handleChange}
-                            label="Password"
-                            placeholder="Your password"
-                            mt="md"
-                            size="md"
-                            radius="md"
-                        />
-                        <Checkbox label="Keep me logged in" mt="xl" size="md" />
-                        <Button onClick={handleSubmit} fullWidth mt="xl" size="md" radius="md">
-                            Login
-                        </Button>
+                        <form onSubmit={handleSubmit}>
+                            <TextInput
+                                name="username"
+                                onChange={handleChange}
+                                label="Username"
+                                placeholder="Your Username"
+                                size="md"
+                                radius="md"
+                            />
+                            <PasswordInput
+                                name="password"
+                                onChange={handleChange}
+                                label="Password"
+                                placeholder="Your password"
+                                mt="md"
+                                size="md"
+                                radius="md"
+                            />
+                            <Checkbox label="Keep me logged in" mt="xl" size="md" />
+                            <Button type='submit' fullWidth mt="xl" size="md" radius="md">
+                                Login
+                            </Button>
+                        </form>
 
                         <Text ta="center" mt="md">
                             Don&apos;t have an account?{' '}
