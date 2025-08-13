@@ -142,6 +142,7 @@ export const fetchMe = async (): Promise<User> => {
 ```
 
 #### `client/app/src/authentication-page/AuthenticationPage.tsx` (Minimal Auth Example)
+
 ```tsx
 import { useState } from 'react';
 import { useAuth } from '../contexts/useAuth';
@@ -182,6 +183,25 @@ export function AuthenticationPage() {
         </div>
     );
 }
+```
+
+#### Logout Functionality (Minimal Example)
+
+The `logout` function is provided by the AuthProvider and can be accessed via the `useAuth` hook. It sends a POST request to the backend logout endpoint and clears the user state on the frontend.
+
+**Minimal usage example:**
+
+```tsx
+import { useAuth } from '../contexts/useAuth';
+
+export function LogoutButton() {
+    const [, { logout }] = useAuth();
+
+    return <button onClick={logout}>Logout</button>;
+}
+```
+
+You can place this button anywhere in your app where you want to allow the user to log out. When clicked, it will log the user out on the backend and update the UI accordingly.
 
 ### 2. Usage
 
@@ -413,3 +433,4 @@ export function AuthenticationPage() {
 - User creation scripts must use `set_password` for authentication to work.
 
 This setup enables secure, session-based authentication between your React frontend and Django backend.
+`````
