@@ -1,6 +1,6 @@
 // import { useState } from 'react';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import HeaderMenu from '../components/header-menu/headerMegaMenu';
 import FooterLinks from '../components/footer/FooterLinks';
 import FeaturesCards from './features-cards/FeaturesCards';
@@ -13,11 +13,11 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 function Homepage() {
     const [state] = useAuth();
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
-    const handleClick = () => {
-        navigate('/contact');
-    };
+    // const handleClick = () => {
+    //     navigate('/contact');
+    // };
 
     useEffect(() => {
         console.log(apiUrl);

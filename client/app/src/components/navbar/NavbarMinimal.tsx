@@ -7,7 +7,7 @@ import {
     IconHome2,
     IconLogout,
     IconSettings,
-    IconSwitchHorizontal,
+    // IconSwitchHorizontal,
     IconUser,
 } from '@tabler/icons-react';
 import { Center, Stack, Tooltip, UnstyledButton } from '@mantine/core';
