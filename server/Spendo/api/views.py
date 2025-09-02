@@ -6,32 +6,41 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import CustomUser
 from .serializer import CustomUserSerializer
+from .services.user_service import get_users_by_email, get_user_by_username, create_user
 from django.views.generic import View
 from django.http import FileResponse
 import os
 
 # Define type of request with api_view
+
 @api_view(['GET'])
 def get_customusers(request):
     email = request.data.get('email')
     print(email)
-    if email:
-        customusers = CustomUser.objects.filter(email=email)
-    else:
-        customusers = CustomUser.objects.all()
-    serializedData = CustomUserSerializer(customusers, many=True).data
-    if not customusers:
-        return Response(f'No users found')
-    return Response(serializedData)
+    data = get_users_by_email(email)
+    if not data:
+        return Response('No users found')
+    return Response(data)
+
 
 @api_view(['GET'])
 def get_customuser_by_username(request, username):
-    try:
-        customuser = CustomUser.objects.get(username=username)
-        serializedData = CustomUserSerializer(customuser, many=False).data
-        return Response(serializedData)
-    except CustomUser.DoesNotExist:
+    data = get_user_by_username(username)
+    if not data:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    return Response(data)
+
+@api_view(['POST'])
+def create_customuser(request):
+    username = request.data.get('username')
+    email = request.data.get('email')
+    password = request.data.get('password')
+    first_name = request.data.get('first_name')
+    last_name = request.data.get("last_name")
+    result = create_user(username, email, password, first_name, last_name)
+    if not result:
+        return Response("User creation failed")
+    return Response({"detail": "User created successfully"}, status=status.HTTP_201_CREATED)
 
 class FrontendAppView(View):
     def get(self, request):
