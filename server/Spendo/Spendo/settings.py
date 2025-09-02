@@ -106,7 +106,7 @@ DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
-        ssl_require=False  # Set to True only if you use SSL locally
+        ssl_require=not DEBUG  # True in production, False in development
     )
 }
 
