@@ -44,6 +44,7 @@ export function AuthenticationPage() {
       console.log(error);
     }
   };
+  
 
   const createUser = async (e: React.FormEvent) => {
     console.log('handling creation');
