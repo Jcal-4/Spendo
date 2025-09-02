@@ -36,7 +36,7 @@ export function AuthenticationPage() {
   const loginUser = async (e: React.FormEvent) => {
     console.log('handling submit');
     e.preventDefault();
-    
+
     try {
       await login(form);
       navigate('/');
@@ -45,6 +45,7 @@ export function AuthenticationPage() {
       console.log(error);
     }
   };
+  
 
   const createUser = async (e: React.FormEvent) => {
     console.log('handling creation');
