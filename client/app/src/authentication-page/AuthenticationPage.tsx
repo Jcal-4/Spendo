@@ -57,6 +57,10 @@ export function AuthenticationPage() {
         },
         body: JSON.stringify(registerForm),
       });
+      const data = await response.json();
+      console.log(data);
+      console.log('User Created!');
+      navigate('/');
     } catch (e) {
       setError('Invalid credentials.' + e);
       console.log(error);
