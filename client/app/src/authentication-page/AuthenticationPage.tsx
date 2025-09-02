@@ -50,7 +50,7 @@ export function AuthenticationPage() {
     console.log(registerForm);
     e.preventDefault();
     try {
-      fetch(`${apiUrl}/createuser/`, {
+      const response  = await fetch(`${apiUrl}/createuser/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
