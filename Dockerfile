@@ -37,3 +37,5 @@ COPY supervisord.conf /etc/supervisord.conf
 
 EXPOSE 8000 3000
 CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
+
+
