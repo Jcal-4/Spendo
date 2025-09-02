@@ -36,6 +36,7 @@ export function AuthenticationPage() {
   const loginUser = async (e: React.FormEvent) => {
     console.log('handling submit');
     e.preventDefault();
+    
     try {
       await login(form);
       navigate('/');
