@@ -12,60 +12,65 @@ import './Homepage.css';
 const apiUrl = import.meta.env.VITE_API_URL;
 
 function Homepage() {
-    const [state] = useAuth();
-    // const navigate = useNavigate();
+  const [state] = useAuth();
+  // const navigate = useNavigate();
 
-    // const handleClick = () => {
-    //     navigate('/contact');
-    // };
+  // const handleClick = () => {
+  //     navigate('/contact');
+  // };
 
-    useEffect(() => {
-        console.log(apiUrl);
-        fetchData();
-    }, []);
+  useEffect(() => {
+    console.log(apiUrl);
+    fetchData();
+  }, []);
 
-    const fetchData = (): void => {
-        fetch(`${apiUrl}/customusers/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-            .then((response) => {
-                console.log(response);
-                if (!response.ok) {
-                    throw new Error(`HTTP Error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then((data) => {
-                // debugger;
-                console.log(data);
-            })
-            .catch((error) => {
-                console.error(`Fetch error: ${error}`);
-            });
-    };
+  const fetchData = (): void => {
+    fetch(`${apiUrl}/customusers/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        console.log(response);
+        if (!response.ok) {
+          throw new Error(`HTTP Error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // debugger;
+        console.log(data);
+      })
+      .catch((error) => {
+        console.error(`Fetch error: ${error}`);
+      });
+  };
 
-    return (
-        <>
-            <div className="homepage-wrapper">
-                <HeaderMenu />
-                <div className="homepage-container">
-                    <NavbarMinimal />
-                    {!state.isAuthenticated && (
-                        <div className="homepage-main-content">
-                            <HeroText />
-                            <div>
-                                <FeaturesCards />
-                            </div>
-                        </div>
-                    )}
-                </div>
-                <FooterLinks />
+  // All hooks above, now check loading
+  if (state.loading) {
+    return null; // Or a spinner/loading indicator
+  }
+
+  return (
+    <>
+      <div className="homepage-wrapper">
+        <HeaderMenu />
+        <div className="homepage-container">
+          <NavbarMinimal />
+          {!state.isAuthenticated && (
+            <div className="homepage-main-content">
+              <HeroText />
+              <div>
+                <FeaturesCards />
+              </div>
             </div>
-        </>
-    );
+          )}
+        </div>
+        <FooterLinks />
+      </div>
+    </>
+  );
 }
 
 export default Homepage;

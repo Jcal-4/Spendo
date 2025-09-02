@@ -20,6 +20,10 @@ export function AuthenticationPage() {
     confirmPassword: '',
   });
   const [error, setError] = useState<string | null>(null);
+  // All hooks above, now check loading
+  if (state.loading) {
+    return null; // Or a spinner/loading indicator
+  }
 
   useEffect(() => {
     console.log(form);
@@ -45,7 +49,6 @@ export function AuthenticationPage() {
       console.log(error);
     }
   };
-  
 
   const createUser = async (e: React.FormEvent) => {
     console.log('handling creation');
