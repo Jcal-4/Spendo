@@ -9,6 +9,3 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 EXPOSE 8000
-
-# Run migrations and then start the server
-CMD ["sh", "-c", "python manage.py migrate && gunicorn Spendo.wsgi:application --bind 0.0.0.0:8000"]
