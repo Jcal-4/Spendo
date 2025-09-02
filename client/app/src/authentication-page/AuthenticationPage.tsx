@@ -29,7 +29,7 @@ export function AuthenticationPage() {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
   };
 
-  const handleRegisterChange = (e) => {
+  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRegisterForm({ ...registerForm, [e.target.name]: e.target.value });
   };
 
@@ -44,14 +44,13 @@ export function AuthenticationPage() {
       console.log(error);
     }
   };
-  
 
   const createUser = async (e: React.FormEvent) => {
     console.log('handling creation');
     console.log(registerForm);
     e.preventDefault();
     try {
-      const response  = await fetch(`${apiUrl}/createuser/`, {
+      const response = await fetch(`${apiUrl}/createuser/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
