@@ -40,7 +40,7 @@ def create_customuser(request):
     result = create_user(username, email, password, first_name, last_name)
     if not result:
         return Response("User creation failed")
-    return Response({"detail": "User created successfully"}, status=status.HTTP_201_CREATED)
+    return Response("User created", status=status.HTTP_201_CREATED)
 
 class FrontendAppView(View):
     def get(self, request):
