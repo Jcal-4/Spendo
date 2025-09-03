@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import HeaderMenu from '../components/header-menu/headerMegaMenu';
 import FooterLinks from '../components/footer/FooterLinks';
 import FeaturesCards from './features-cards/FeaturesCards';
+import LeadGrid from './home-grid/LeadGrid';
 import { useAuth } from '../contexts/useAuth';
 import { NavbarMinimal } from '../components/navbar/NavbarMinimal';
 import { HeroText } from './hero-section/HeroText';
@@ -47,9 +48,9 @@ function Homepage() {
       });
   };
 
-  // All hooks above, now check loading
+  // Check loading state to prevent rendering issue
   if (state.loading) {
-    return null; // Or a spinner/loading indicator
+    return null;
   }
 
   return (
@@ -57,13 +58,17 @@ function Homepage() {
       <div className="homepage-wrapper">
         <HeaderMenu />
         <div className="homepage-container">
-          <NavbarMinimal />
-          {!state.isAuthenticated && (
+          {!state.isAuthenticated ? (
             <div className="homepage-main-content">
               <HeroText />
               <div>
                 <FeaturesCards />
               </div>
+            </div>
+          ) : (
+            <div className="homepage-main-content">
+              <NavbarMinimal />
+              <LeadGrid />
             </div>
           )}
         </div>

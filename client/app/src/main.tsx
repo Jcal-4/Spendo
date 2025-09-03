@@ -5,27 +5,23 @@ import { AuthProvider } from './contexts/AuthContext.tsx';
 // import ReactDOM from 'react-dom/client';
 // import App from './App.tsx';
 import Homepage from './Homepage/Homepage.tsx';
-import ContactPage from './contact-page/ContactPage.tsx';
 import AuthenticationPage from './authentication-page/AuthenticationPage';
 import '@mantine/core/styles.css';
 import { MantineProvider } from '@mantine/core';
 
 createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-        <MantineProvider>
-            <AuthProvider>
-                <BrowserRouter>
-                    <Routes>
-                        <Route path="/" element={<Homepage />} />
-                    </Routes>
-                    <Routes>
-                        <Route path="/contact" element={<ContactPage />} />
-                    </Routes>
-                    <Routes>
-                        <Route path="/login" element={<AuthenticationPage />} />
-                    </Routes>
-                </BrowserRouter>
-            </AuthProvider>
-        </MantineProvider>
-    </StrictMode>
+  <StrictMode>
+    <MantineProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Homepage />} />
+          </Routes>
+          <Routes>
+            <Route path="/login" element={<AuthenticationPage />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </MantineProvider>
+  </StrictMode>
 );
