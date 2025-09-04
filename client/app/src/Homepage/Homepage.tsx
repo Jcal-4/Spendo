@@ -70,7 +70,7 @@ function Homepage() {
               <div className="flex-shrink-0">
                 <NavbarMinimal />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex flex-1 min-w-0 align-center justify-center">
                 <LeadGrid />
               </div>
             </div>
