@@ -1,4 +1,5 @@
-import { Container, Grid, SimpleGrid, Skeleton } from '@mantine/core';
+import { IconArrowDownRight, IconArrowUpRight, IconCoin, IconDiscount2, IconReceipt2, IconUserPlus } from '@tabler/icons-react';
+import { Group, Paper, Skeleton, Text } from '@mantine/core';
 import StatsSegments from './stats-segments/StatsSegments';
 const PRIMARY_COL_HEIGHT = '300px';
 
@@ -12,9 +13,53 @@ export function LeadGrid() {
       </div>
       <div className="flex flex-col gap-6">
         <StatsSegments />
-        <div className="flex gap-6">
-          <Skeleton height={SECONDARY_COL_HEIGHT} radius="md" animate={false} />
-          <Skeleton height={SECONDARY_COL_HEIGHT} radius="md" animate={false} />
+
+        <div className="flex w-full gap-6">
+          <div className="flex-1">
+            <Paper withBorder p="md" radius="md">
+              <Group justify="space-between">
+                <Text size="xs" c="dimmed">
+                  34.17
+                </Text>
+                <IconDiscount2 size={22} stroke={1.5} />
+              </Group>
+
+              <Group align="flex-end" gap="xs" mt={25}>
+                <Text className="text-2xl font-bold">1230</Text>
+                <Text c="teal" fz="sm" fw={500}>
+                  <span>34.19%</span>
+                  <IconArrowDownRight size={16} stroke={1.5} />
+                </Text>
+              </Group>
+
+              <Text fz="xs" c="dimmed" mt={7}>
+                Compared to previous month
+              </Text>
+            </Paper>
+          </div>
+
+          <div className="flex-1">
+            <Paper withBorder p="md" radius="md">
+              <Group justify="space-between">
+                <Text size="xs" c="dimmed">
+                  34.17
+                </Text>
+                <IconDiscount2 size={22} stroke={1.5} />
+              </Group>
+
+              <Group align="flex-end" gap="xs" mt={25}>
+                <Text className="text-2xl font-bold">1230</Text>
+                <Text c="teal" fz="sm" fw={500}>
+                  <span>34.19%</span>
+                  <IconArrowDownRight size={16} stroke={1.5} />
+                </Text>
+              </Group>
+
+              <Text fz="xs" c="dimmed" mt={7}>
+                Compared to previous month
+              </Text>
+            </Paper>
+          </div>
         </div>
       </div>
     </div>
