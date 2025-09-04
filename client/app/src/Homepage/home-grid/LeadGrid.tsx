@@ -6,13 +6,13 @@ export function LeadGrid() {
   const SECONDARY_COL_HEIGHT = `calc(${PRIMARY_COL_HEIGHT} / 2 - var(--mantine-spacing-md) / 2)`;
 
   return (
-    <div className="flex flex-row items-center justify-center gap-8 m-8 min-w-1">
+    <div className="flex flex-row items-center justify-center gap-8 m-8">
       <div>
         <StatsSegments />
       </div>
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-6">
         <StatsSegments />
-        <div className="flex gap-8">
+        <div className="flex gap-6">
           <Skeleton height={SECONDARY_COL_HEIGHT} radius="md" animate={false} />
           <Skeleton height={SECONDARY_COL_HEIGHT} radius="md" animate={false} />
         </div>

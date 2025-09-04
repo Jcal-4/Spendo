@@ -6,7 +6,7 @@ import classes from './StatsSegments.module.css';
 const data = [
   { label: 'Cash', count: '204,001', part: 59, color: '#47d6ab' },
   { label: 'Savings', count: '121,017', part: 35, color: '#03141a' },
-  { label: 'Investments', count: '31,118', part: 6, color: '#4fcdf7' },
+  { label: 'Investing & Retirement', count: '31,118', part: 6, color: '#4fcdf7' },
 ];
 
 export function StatsSegments() {
@@ -33,7 +33,7 @@ export function StatsSegments() {
   ));
 
   return (
-    <Paper className="min-w-125" withBorder p="md" radius="md">
+    <Paper withBorder p="md" radius="md">
       <Group justify="space-between">
         <Group align="flex-end" gap="xs">
           <Text fz="xl" fw={700}>
