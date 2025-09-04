@@ -66,9 +66,13 @@ function Homepage() {
               </div>
             </div>
           ) : (
-            <div className="homepage-main-content">
-              <NavbarMinimal />
-              <LeadGrid />
+            <div className="homepage-main-content flex flex-row w-full min-h-[400px]">
+              <div className="flex-shrink-0">
+                <NavbarMinimal />
+              </div>
+              <div className="flex-1 min-w-0">
+                <LeadGrid />
+              </div>
             </div>
           )}
         </div>

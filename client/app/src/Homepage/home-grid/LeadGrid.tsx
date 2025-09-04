@@ -6,22 +6,18 @@ export function LeadGrid() {
   const SECONDARY_COL_HEIGHT = `calc(${PRIMARY_COL_HEIGHT} / 2 - var(--mantine-spacing-md) / 2)`;
 
   return (
-    <Container my="md">
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-        <Skeleton height={PRIMARY_COL_HEIGHT} radius="md" animate={false} />
-        <Grid gutter="md">
-          <Grid.Col>
-            <StatsSegments />
-          </Grid.Col>
-          <Grid.Col span={6}>
-            <Skeleton height={SECONDARY_COL_HEIGHT} radius="md" animate={false} />
-          </Grid.Col>
-          <Grid.Col span={6}>
-            <Skeleton height={SECONDARY_COL_HEIGHT} radius="md" animate={false} />
-          </Grid.Col>
-        </Grid>
-      </SimpleGrid>
-    </Container>
+    <div className="flex flex-row items-center justify-center gap-8 m-8 min-w-1">
+      <div>
+        <StatsSegments />
+      </div>
+      <div className="flex flex-col gap-8">
+        <StatsSegments />
+        <div className="flex gap-8">
+          <Skeleton height={SECONDARY_COL_HEIGHT} radius="md" animate={false} />
+          <Skeleton height={SECONDARY_COL_HEIGHT} radius="md" animate={false} />
+        </div>
+      </div>
+    </div>
   );
 }
 

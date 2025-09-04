@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext.tsx';
 // import App from './App.tsx';
 import Homepage from './Homepage/Homepage.tsx';
 import AuthenticationPage from './authentication-page/AuthenticationPage';
+import './index.css';
 import '@mantine/core/styles.css';
 import { MantineProvider } from '@mantine/core';
 
