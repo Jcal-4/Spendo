@@ -1,17 +1,18 @@
 .homepage-wrapper {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    /* gap: 20px; */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* gap: 20px; */
 }
 
 .homepage-container {
-    /* display: flex; */
-    /* justify-content: center; */
-    /* min-width: 1000px; */
-    /* height: 774px; */
+  /* display: flex; */
+  /* justify-content: center; */
+  /* min-width: 1000px; */
+  /* height: 774px; */
 }
 
 .homepage-main-content {
-    display: flex;
+  display: flex;
+  flex-direction: column;
 }
