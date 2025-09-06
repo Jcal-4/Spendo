@@ -1,17 +1,20 @@
 .chatbotContainer {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 1rem;
+  right: 1rem;
   z-index: 1000;
 }
 
 .fab {
-  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #232946 50%, #6366f1 100%);
   color: #fff;
   border: none;
   border-radius: 50%;
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   font-size: 2.2rem;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   cursor: pointer;
@@ -26,8 +29,8 @@
 }
 
 .chatWindow {
-  width: 360px;
-  height: 480px;
+  width: 400px;
+  height: 600px;
   background: rgba(24, 24, 32, 0.92);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
@@ -53,7 +56,7 @@
 .header {
   background: linear-gradient(135deg, #18181b 60%, #6366f1 100%);
   color: #fff;
-  padding: 8px 1.0rem;
+  padding: 8px 1rem;
   font-weight: 700;
   display: flex;
   justify-content: space-between;
@@ -88,7 +91,7 @@
   align-self: flex-start;
   background: linear-gradient(135deg, #232946 60%, #6366f1 100%);
   color: #a5b4fc;
-  padding: 0.7rem 1.1rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 1.3rem 1.3rem 1.3rem 0.5rem;
   max-width: 80%;
   font-size: 14px;
@@ -98,7 +101,7 @@
   align-self: flex-end;
   background: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
   color: #fff;
-  padding: 0.7rem 1.1rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 1.3rem 1.3rem 0.5rem 1.3rem;
   max-width: 80%;
   font-size: 14px;
@@ -116,7 +119,7 @@
   border: none;
   border-radius: 1.2rem;
   padding: 0.7rem 1.1rem;
-  font-size: 1rem;
+  font-size: 14px;
   background: #232946;
   color: #e0e7ff;
   margin-right: 0.5rem;

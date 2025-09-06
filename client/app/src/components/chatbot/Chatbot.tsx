@@ -28,7 +28,11 @@ const Chatbot: React.FC = () => {
     <div className={styles.chatbotContainer}>
       {!open && (
         <button className={styles.fab} onClick={() => setOpen(true)} aria-label="Open chatbot">
-          💬
+          <img
+            src="https://img.icons8.com/?size=100&id=uZrQP6cYos2I&format=png&color=000000"
+            alt="Open chatbot"
+            style={{ width: 40, height: 40 }}
+          />
         </button>
       )}
       {open && (
