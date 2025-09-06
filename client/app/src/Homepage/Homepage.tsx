@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/useAuth';
 import { NavbarMinimal } from '../components/navbar/NavbarMinimal';
 import { HeroText } from './hero-section/HeroText';
 import './Homepage.css';
+import Chatbot from '../components/Chatbot';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -77,6 +78,7 @@ function Homepage() {
           )}
         </div>
         <FooterLinks />
+        <Chatbot />
       </div>
     </>
   );
