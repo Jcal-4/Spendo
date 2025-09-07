@@ -5,16 +5,15 @@ import Demo from './chart/Chart';
 
 export function LeadGrid() {
   return (
-    <div className="flex flex-row items-center justify-center gap-8 m-8">
-      <div>
+    <div className="flex flex-row items-center justify-center gap-8 min-w-full !p-10">
+      <div className="flex-1 ">
         <Paper withBorder p="md" radius="md">
           <Demo />
         </Paper>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-1 flex-col gap-6">
         <StatsSegments />
-
         <div className="flex w-full gap-6">
           <div className="flex-1">
             <Paper withBorder p="md" radius="md">

@@ -17,7 +17,7 @@ const Demo = () => {
   });
 
   return (
-    <Chart.Root className="w-full max-w-xl h-94 mx-auto" chart={chart}>
+    <Chart.Root chart={chart}>
       <LineChart data={chart.data}>
         <CartesianGrid stroke="#424242" vertical={false} />
         <XAxis axisLine={false} dataKey={chart.key('month')} tickFormatter={(value) => value.slice(0, 3)} stroke={chart.color('border')} />
