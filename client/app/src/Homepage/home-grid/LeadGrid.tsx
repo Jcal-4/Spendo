@@ -1,16 +1,17 @@
-import { IconArrowDownRight, IconArrowUpRight, IconCoin, IconDiscount2, IconReceipt2, IconUserPlus } from '@tabler/icons-react';
-import { Group, Paper, Skeleton, Text } from '@mantine/core';
+import { IconArrowDownRight, IconDiscount2 } from '@tabler/icons-react';
+import { Group, Paper, Text } from '@mantine/core';
 import StatsSegments from './stats-segments/StatsSegments';
-const PRIMARY_COL_HEIGHT = '300px';
+import Demo from './chart/Chart';
 
 export function LeadGrid() {
-  const SECONDARY_COL_HEIGHT = `calc(${PRIMARY_COL_HEIGHT} / 2 - var(--mantine-spacing-md) / 2)`;
-
   return (
     <div className="flex flex-row items-center justify-center gap-8 m-8">
       <div>
-        <StatsSegments />
+        <Paper withBorder p="md" radius="md">
+          <Demo />
+        </Paper>
       </div>
+
       <div className="flex flex-col gap-6">
         <StatsSegments />
 
