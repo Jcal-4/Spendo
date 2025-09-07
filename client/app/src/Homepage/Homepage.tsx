@@ -67,7 +67,7 @@ function Homepage() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-row w-full min-h-[400px]">
+            <div className="flex flex-row w-full min-h-[500px]">
               <div className="flex-shrink-0">
                 <NavbarMinimal />
               </div>
