@@ -20,10 +20,6 @@ export function AuthenticationPage() {
     confirmPassword: '',
   });
   const [error, setError] = useState<string | null>(null);
-  // All hooks above, now check loading
-  if (state.loading) {
-    return null; // Or a spinner/loading indicator
-  }
 
   useEffect(() => {
     console.log(form);
@@ -81,6 +77,11 @@ export function AuthenticationPage() {
   const startLogin = (): void => {
     setIsRegister(false);
   };
+
+  // All hooks above, now check loading
+  if (state.loading) {
+    return null; // Or a spinner/loading indicator
+  }
 
   return (
     <>
