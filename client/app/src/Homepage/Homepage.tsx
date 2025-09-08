@@ -1,5 +1,5 @@
 // import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import HeaderMenu from '../components/header-menu/headerMegaMenu';
 import FooterLinks from '../components/footer/FooterLinks';
@@ -15,39 +15,12 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 function Homepage() {
   const [state] = useAuth();
+  const [total_monetary_balance, set_total_monetary_balance] = useState(0);
   // const navigate = useNavigate();
 
   // const handleClick = () => {
   //     navigate('/contact');
   // };
-
-  useEffect(() => {
-    console.log(apiUrl);
-    fetchData();
-  }, []);
-
-  const fetchData = (): void => {
-    fetch(`${apiUrl}/customusers/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-      .then((response) => {
-        console.log(response);
-        if (!response.ok) {
-          throw new Error(`HTTP Error! Status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        // debugger;
-        console.log(data);
-      })
-      .catch((error) => {
-        console.error(`Fetch error: ${error}`);
-      });
-  };
 
   // Check loading state to prevent rendering issue
   if (state.loading) {
@@ -70,6 +43,7 @@ function Homepage() {
       })
       .then((data) => {
         console.log('Accounts linked to User:', data);
+        set_total_monetary_balance(data.total_balance);
       })
       .catch((error) => {
         console.error(`Fetch error: ${error}`);
@@ -110,7 +84,7 @@ function Homepage() {
                 <NavbarMinimal />
               </div>
               <div className="flex flex-1 min-w-0 min-h-[500px] align-center justify-center">
-                <LeadGrid />
+                <LeadGrid total_monetary_balance={total_monetary_balance} />
               </div>
             </div>
           )}

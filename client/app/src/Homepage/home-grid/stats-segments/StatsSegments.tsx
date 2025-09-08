@@ -9,8 +9,8 @@ const data = [
   { label: 'Investing & Retirement', count: '31,118', part: 6, color: '#4fcdf7' },
 ];
 
-export function StatsSegments() {
-  const [totalMonetaryValue, setTotalMonetaryValue] = useState(0);
+export function StatsSegments(props) {
+  // const [totalMonetaryValue, setTotalMonetaryValue] = useState(0);
   const segments = data.map((segment) => (
     <Progress.Section value={segment.part} color={segment.color} key={segment.color}>
       {segment.part > 10 && <Progress.Label>{segment.part}%</Progress.Label>}
@@ -37,7 +37,7 @@ export function StatsSegments() {
       <Group justify="space-between">
         <Group align="flex-end" gap="xs">
           <Text fz="xl" fw={700}>
-            ${totalMonetaryValue}
+            ${props.total_monetary_balance}
           </Text>
           {/* <Text c="teal" className={classes.diff} fz="sm" fw={700}>
             <span>18%</span>

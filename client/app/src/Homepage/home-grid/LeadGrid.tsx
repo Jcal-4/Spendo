@@ -3,7 +3,7 @@ import { Group, Paper, Text } from '@mantine/core';
 import StatsSegments from './stats-segments/StatsSegments';
 import Demo from './chart/Chart';
 
-export function LeadGrid() {
+export function LeadGrid(props) {
   return (
     <div className="flex flex-row items-center justify-center gap-8 min-w-full !p-10">
       <div className="flex-1 ">
@@ -13,7 +13,7 @@ export function LeadGrid() {
       </div>
 
       <div className="flex flex-1 flex-col gap-6">
-        <StatsSegments />
+        <StatsSegments total_monetary_balance ={props.total_monetary_balance}/>
         <div className="flex w-full gap-6">
           <div className="flex-1">
             <Paper withBorder p="md" radius="md">
