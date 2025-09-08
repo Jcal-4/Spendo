@@ -42,7 +42,7 @@ def get_accounts_by_userid(user_id):
             total_balance += account.balance
             if account.institution.type == "cash":
                 cash_balance += account.balance
-            elif account.institution.type == "savings":
+            elif account.institution.type == "saving":
                 savings_balance += account.balance
             elif account.institution.type == "investing_retirement":
                 investing_retirment_balance += account.balance

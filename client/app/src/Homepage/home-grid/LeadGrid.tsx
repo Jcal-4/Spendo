@@ -6,7 +6,7 @@ import Demo from './chart/Chart';
 interface StatsSegmentsProps {
   user_balance: {
     cash_balance?: number;
-    savings?: number;
+    savings_balance?: number;
     investing_retirement?: number;
     total_balance?: number;
   };

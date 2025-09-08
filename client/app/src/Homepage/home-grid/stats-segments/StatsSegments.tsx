@@ -6,7 +6,7 @@ import classes from './StatsSegments.module.css';
 interface StatsSegmentsProps {
   user_balance: {
     cash_balance?: number;
-    savings?: number;
+    savings_balance?: number;
     investing_retirement?: number;
     total_balance?: number;
   };
@@ -15,15 +15,22 @@ interface StatsSegmentsProps {
 export function StatsSegments(props: StatsSegmentsProps) {
   // Helper to format numbers with commas
   const formatMoney = (amount: number) => amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const { cash_balance = 0, savings = 0, investing_retirement = 0, total_balance = 0 } = props.user_balance;
+  const { cash_balance = 0, savings_balance = 0, investing_retirement = 0, total_balance = 0 } = props.user_balance;
 
-  // Avoid division by zero
-  const getPercent = (amount: number) => (total_balance > 0 ? Math.round((amount / total_balance) * 100) : 0);
+  // Calculate percentages so they always sum to 100%
+  let cashPercent = 0,
+    savingsPercent = 0,
+    investPercent = 0;
+  if (total_balance > 0) {
+    cashPercent = Math.round((cash_balance / total_balance) * 100);
+    savingsPercent = Math.round((savings_balance / total_balance) * 100);
+    investPercent = 100 - cashPercent - savingsPercent;
+  }
 
   const data = [
-    { label: 'Cash', count: cash_balance, part: getPercent(cash_balance), color: '#47d6ab' },
-    { label: 'Savings', count: savings, part: getPercent(savings), color: '#03141a' },
-    { label: 'Investing & Retirement', count: investing_retirement, part: getPercent(investing_retirement), color: '#4fcdf7' },
+    { label: 'Cash', count: cash_balance, part: cashPercent, color: '#47d6ab' },
+    { label: 'Savings', count: savings_balance, part: savingsPercent, color: '#ffb347' }, // orange
+    { label: 'Investing & Retirement', count: investing_retirement, part: investPercent, color: '#4fcdf7' },
   ];
   // const [totalMonetaryValue, setTotalMonetaryValue] = useState(0);
   const segments = data.map((segment) => (

@@ -17,7 +17,7 @@ function Homepage() {
   const [state] = useAuth();
   const [user_balance, set_user_balance] = useState({
     cash_balance: 0,
-    savings: 0,
+    savings_balance: 0,
     investing_retirement: 0,
     total_balance: 0,
   });
