@@ -3,13 +3,28 @@ import { IconArrowUpRight, IconDeviceAnalytics } from '@tabler/icons-react';
 import { Box, Group, Paper, Progress, SimpleGrid, Text } from '@mantine/core';
 import classes from './StatsSegments.module.css';
 
-const data = [
-  { label: 'Cash', count: '204,001', part: 59, color: '#47d6ab' },
-  { label: 'Savings', count: '121,017', part: 35, color: '#03141a' },
-  { label: 'Investing & Retirement', count: '31,118', part: 6, color: '#4fcdf7' },
-];
+interface StatsSegmentsProps {
+  user_balance: {
+    cash_balance?: number;
+    savings?: number;
+    investing_retirement?: number;
+    total_balance?: number;
+  };
+}
 
-export function StatsSegments(props) {
+export function StatsSegments(props: StatsSegmentsProps) {
+  // Helper to format numbers with commas
+  const formatMoney = (amount: number) => amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const { cash_balance = 0, savings = 0, investing_retirement = 0, total_balance = 0 } = props.user_balance;
+
+  // Avoid division by zero
+  const getPercent = (amount: number) => (total_balance > 0 ? Math.round((amount / total_balance) * 100) : 0);
+
+  const data = [
+    { label: 'Cash', count: cash_balance, part: getPercent(cash_balance), color: '#47d6ab' },
+    { label: 'Savings', count: savings, part: getPercent(savings), color: '#03141a' },
+    { label: 'Investing & Retirement', count: investing_retirement, part: getPercent(investing_retirement), color: '#4fcdf7' },
+  ];
   // const [totalMonetaryValue, setTotalMonetaryValue] = useState(0);
   const segments = data.map((segment) => (
     <Progress.Section value={segment.part} color={segment.color} key={segment.color}>
@@ -24,7 +39,7 @@ export function StatsSegments(props) {
       </Text>
 
       <Group justify="space-between" align="flex-end" gap={0}>
-        <Text fw={700}>{stat.count}</Text>
+        <Text fw={700}>${formatMoney(stat.count)}</Text>
         <Text c={stat.color} fw={700} size="sm" className={classes.statCount}>
           {stat.part}%
         </Text>
@@ -37,7 +52,7 @@ export function StatsSegments(props) {
       <Group justify="space-between">
         <Group align="flex-end" gap="xs">
           <Text fz="xl" fw={700}>
-            ${props.user_balance.total_balance}
+            ${formatMoney(total_balance)}
           </Text>
           {/* <Text c="teal" className={classes.diff} fz="sm" fw={700}>
             <span>18%</span>
