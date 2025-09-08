@@ -34,6 +34,10 @@ def create_user(username, email, password, first_name, last_name):
 def get_accounts_by_userid(user_id):
     try:
         accounts = Account.objects.filter(user_id=user_id)
-        return AccountSerializer(accounts, many=True).data
+        total_balance = 0
+        for account in accounts:
+            total_balance += account.balance
+        # return AccountSerializer(accounts, many=True).data
+        return {'total_balance': total_balance}
     except Account.DoesNotExist:
         return None
