@@ -35,9 +35,18 @@ def get_accounts_by_userid(user_id):
     try:
         accounts = Account.objects.filter(user_id=user_id)
         total_balance = 0
+        cash_balance = 0
+        savings_balance = 0
+        investing_retirment_balance = 0
         for account in accounts:
             total_balance += account.balance
+            if account.institution.type == "cash":
+                cash_balance += account.balance
+            elif account.institution.type == "savings":
+                savings_balance += account.balance
+            elif account.institution.type == "investing_retirement":
+                investing_retirment_balance += account.balance
         # return AccountSerializer(accounts, many=True).data
-        return {'total_balance': total_balance}
+        return {'total_balance': total_balance, 'cash_balance': cash_balance, "savings_balance": savings_balance, "investing_retirement": investing_retirment_balance  }
     except Account.DoesNotExist:
         return None

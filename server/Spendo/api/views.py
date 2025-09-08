@@ -20,7 +20,6 @@ def get_user_accounts(request, user_id):
         return Response('No accounts found for logged in User')
     return Response(data)
     
-    
 
 @api_view(['GET'])
 def get_customusers(request):
