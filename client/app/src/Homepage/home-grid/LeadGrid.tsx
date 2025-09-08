@@ -13,7 +13,7 @@ export function LeadGrid(props) {
       </div>
 
       <div className="flex flex-1 flex-col gap-6">
-        <StatsSegments total_monetary_balance ={props.total_monetary_balance}/>
+        <StatsSegments user_balance={props.user_balance} />
         <div className="flex w-full gap-6">
           <div className="flex-1">
             <Paper withBorder p="md" radius="md">

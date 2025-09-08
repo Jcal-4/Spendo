@@ -37,7 +37,7 @@ export function StatsSegments(props) {
       <Group justify="space-between">
         <Group align="flex-end" gap="xs">
           <Text fz="xl" fw={700}>
-            ${props.total_monetary_balance}
+            ${props.user_balance.total_balance}
           </Text>
           {/* <Text c="teal" className={classes.diff} fz="sm" fw={700}>
             <span>18%</span>
