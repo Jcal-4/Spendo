@@ -52,7 +52,45 @@ function Homepage() {
   // Check loading state to prevent rendering issue
   if (state.loading) {
     return null;
+  } else {
+    console.log('Auth state:', state);
+    // I need to perform a fetch here to the backend to get the users linked accounts and display them in the dashboard
+    fetch(`${apiUrl}/customuser/${state.user.id}/accounts/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        console.log(response);
+        if (!response.ok) {
+          throw new Error(`HTTP Error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Accounts linked to User:', data);
+      })
+      .catch((error) => {
+        console.error(`Fetch error: ${error}`);
+      });
   }
+
+  /* Example
+  state = 
+{
+    "user": {
+        "id": 1,
+        "username": "user0",
+        "email": "user0@example.com",
+        "is_staff": false,
+        "is_superuser": false,
+        "role": "user"
+    },
+    "isAuthenticated": true,
+    "loading": false
+}
+  */
 
   return (
     <>

@@ -1,5 +1,5 @@
-from ..models import CustomUser
-from ..serializer import CustomUserSerializer
+from ..models import CustomUser, Account
+from ..serializer import CustomUserSerializer, AccountSerializer
 
 
 def get_users_by_email(email=None):
@@ -30,3 +30,10 @@ def create_user(username, email, password, first_name, last_name):
         return customer_user
     except Exception as e:
         return "Error occurred: " + str(e)  
+    
+def get_accounts_by_userid(user_id):
+    try:
+        accounts = Account.objects.filter(user_id=user_id)
+        return AccountSerializer(accounts, many=True).data
+    except Account.DoesNotExist:
+        return None

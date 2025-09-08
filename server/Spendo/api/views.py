@@ -6,12 +6,21 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import CustomUser
 from .serializer import CustomUserSerializer
-from .services.user_service import get_users_by_email, get_user_by_username, create_user
+from .services.user_service import get_users_by_email, get_user_by_username, create_user, get_accounts_by_userid
 from django.views.generic import View
 from django.http import FileResponse
 import os
 
 # Define type of request with api_view
+
+@api_view(['GET'])
+def get_user_accounts(request, user_id):
+    data = get_accounts_by_userid(user_id)
+    if not data:
+        return Response('No accounts found for logged in User')
+    return Response(data)
+    
+    
 
 @api_view(['GET'])
 def get_customusers(request):
@@ -40,7 +49,7 @@ def create_customuser(request):
     result = create_user(username, email, password, first_name, last_name)
     if not result:
         return Response("User creation failed")
-    return Response("User created", status=status.HTTP_201_CREATED)
+    return Response({"detail": "User created successfully"}, status=status.HTTP_201_CREATED)
 
 class FrontendAppView(View):
     def get(self, request):
