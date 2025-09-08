@@ -25,7 +25,7 @@ function Homepage() {
   // Check loading state to prevent rendering issue
   if (state.loading) {
     return null;
-  } else {
+  } else if (!state.loading && state.isAuthenticated) {
     console.log('Auth state:', state);
     // I need to perform a fetch here to the backend to get the users linked accounts and display them in the dashboard
     fetch(`${apiUrl}/customuser/${state.user.id}/accounts/`, {

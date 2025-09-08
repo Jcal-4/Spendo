@@ -22,10 +22,19 @@ class TransactionType(models.Model):
     id = models.AutoField(primary_key=True)
     type = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
+class Institution(models.Model):
+    INSTITUTION_TYPE_CHOICES = [
+        ('cash', 'Cash'),
+        ('saving', 'Saving'),
+        ('investing_retirement', 'Investing & Retirement'),
+    ]
+    id = models.AutoField(primary_key=True)
+    type = models.CharField(max_length=24, choices=INSTITUTION_TYPE_CHOICES)
 class Account(models.Model):
     id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=30, default="Account")
     balance = models.DecimalField(decimal_places=2, default=0.0, max_digits=10)
-    institution = models.TextField() # I might wanna make this into another table later on
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='accounts')
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='accounts')
 class Transaction(models.Model):
@@ -39,3 +48,4 @@ class Transaction(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='transactions')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions', null=True)
     transactiontype = models.ForeignKey(TransactionType, on_delete=models.CASCADE, related_name='transactions')
+    

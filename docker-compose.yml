@@ -28,7 +28,7 @@ services:
       [
         'sh',
         '-c',
-        'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py runserver 0.0.0.0:8000',
+        'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000',
       ]
 
   db:

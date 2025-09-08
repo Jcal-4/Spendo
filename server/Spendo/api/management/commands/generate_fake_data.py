@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from api.models import CustomUser, Income, IncomeType, Account, Transaction, TransactionType
+from api.models import CustomUser, Income, IncomeType, Account, Transaction, TransactionType, Institution
 from django.utils import timezone
 import random
 
@@ -21,14 +21,33 @@ class Command(BaseCommand):
         transaction_per_user = options['user_transactions']
         occupations = ['Engineer', 'Teacher', 'Doctor', 'Artist', 'Developer', 'Designer']
         income_types = ['Salary', 'Bonus', 'Freelance', 'Investment', 'Gift']
-        institutions = [
-            'Checking', 'Savings', 'Investment', '401k', 'Trusts', 'Credit',
-            'Money Market', 'IRA', 'Roth IRA', 'Brokerage', 'Health Savings Account',
-            'Certificate of Deposit', 'Business Account', 'Joint Account', 'Custodial Account',
-            'Education Savings', 'PayPal', 'Venmo', 'Cash App', 'Prepaid Card',
-            'Mortgage', 'Auto Loan', 'Personal Loan', 'Line of Credit', 'Travel Account',
-            'Retirement Account', 'SEP IRA', 'Simple IRA', 'Annuity', 'Foreign Currency Account'
+        # List of possible account names
+        account_names = [
+            # Cash
+            'Checking', 'PayPal', 'Venmo', 'Cash App', 'Prepaid Card', 'Foreign Currency Account',
+            # Savings
+            'Savings', 'Money Market', 'Certificate of Deposit',
+            'Education Savings', 'Health Savings Account',
+            'Trusts', 'Business Account', 'Joint Account', 'Custodial Account',
+            # Investing & Retirement
+            'Investment', '401k', 'IRA', 'Roth IRA', 'SEP IRA', 'Simple IRA',
+            'Brokerage', 'Retirement Account', 'Annuity'
         ]
+
+        # Create Institution objects for each type
+        institution_types = [
+            ('cash', 'Cash'),
+            ('saving', 'Saving'),
+            ('investing_retirement', 'Investing & Retirement'),
+        ]
+        institution_objs = []
+        for value, label in institution_types:
+            inst, created = Institution.objects.get_or_create(type=value)
+            institution_objs.append(inst)
+            if created:
+                self.stdout.write(self.style.SUCCESS(f'Created Institution: {label}'))
+            else:
+                self.stdout.write(self.style.WARNING(f'Found existing Institution: {label}'))
         user_transactions = [
             'ubereats', 'postmates', 'internet', 'att', 'haircut', 'groceries', 'steam game',
             'rent', 'mortgage', 'electric bill', 'water bill', 'gas bill', 'phone bill',
@@ -93,13 +112,30 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'  Added income: {income.incometype} (${income.amount})'))
             
             # For each User being created, create a related Account record
+            # Mapping of account name to institution type
+            account_type_map = {
+                # Cash
+                'Checking': 'cash', 'PayPal': 'cash', 'Venmo': 'cash', 'Cash App': 'cash', 'Prepaid Card': 'cash', 'Foreign Currency Account': 'cash',
+                # Savings
+                'Savings': 'saving', 'Money Market': 'saving', 'Certificate of Deposit': 'saving', 'Education Savings': 'saving', 'Health Savings Account': 'saving',
+                'Trusts': 'saving', 'Business Account': 'saving', 'Joint Account': 'saving', 'Custodial Account': 'saving',
+                # Investing & Retirement
+                'Investment': 'investing_retirement', '401k': 'investing_retirement', 'IRA': 'investing_retirement', 'Roth IRA': 'investing_retirement',
+                'SEP IRA': 'investing_retirement', 'Simple IRA': 'investing_retirement', 'Brokerage': 'investing_retirement',
+                'Retirement Account': 'investing_retirement', 'Annuity': 'investing_retirement'
+            }
+
             for j in range(accounts_per_user):
+                account_name = random.choice(account_names)
+                institution_type = account_type_map[account_name]
+                institution = next(inst for inst in institution_objs if inst.type == institution_type)
                 account = Account.objects.create(
-                    balance = round(random.uniform(0, 10000), 2),
-                    institution = random.choice(institutions),
-                    user = custom_user
+                    name=account_name,
+                    balance=round(random.uniform(0, 10000), 2),
+                    institution=institution,
+                    user=custom_user
                 )
-                self.stdout.write(self.style.SUCCESS(f' Added Account: {account.institution}'))
+                self.stdout.write(self.style.SUCCESS(f' Added Account: {account_name} ({institution.get_type_display()})'))
                 
             # For each User being created, create a related Transaction record
             for j in range(transaction_per_user):

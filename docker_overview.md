@@ -8,10 +8,10 @@ Docker is a platform that allows you to package, distribute, and run application
 
 - It is perfectly fine—and often recommended—to use `docker-compose` for local development, even if you deploy to Heroku (or another platform) with a single-container setup.
 - With `docker-compose`, you can:
-    - Run frontend, backend, and database as separate containers.
-    - Use volume mounts for live code changes and hot-reloading.
-    - Debug and restart services independently.
-    - Mimic a real-world microservices or multi-service environment.
+  - Run frontend, backend, and database as separate containers.
+  - Use volume mounts for live code changes and hot-reloading.
+  - Debug and restart services independently.
+  - Mimic a real-world microservices or multi-service environment.
 - For deployment (e.g., Heroku), you use a single-container image for simplicity and compatibility with the platform.
 - Just ensure your code and environment variables work in both setups (e.g., use `.env` files and environment variable fallbacks).
 
@@ -103,50 +103,50 @@ This section covers a typical setup for a full stack project (React frontend, Dj
 
 ```yaml
 services:
-    frontend:
-        build:
-            context: ./client/app
-        working_dir: /app
-        ports:
-            - '5173:5173'
-        environment:
-            - NODE_ENV=development
-        volumes:
-            - ./client/app:/app
-        command: ['npm', 'run', 'dev', '--', '--host']
+  frontend:
+    build:
+      context: ./client/app
+    working_dir: /app
+    ports:
+      - '5173:5173'
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./client/app:/app
+    command: ['npm', 'run', 'dev', '--', '--host']
 
-    backend:
-        build:
-            context: ./server/Spendo
-        working_dir: /code
-        ports:
-            - '8000:8000'
-        volumes:
-            - ./server/Spendo:/code
-            - ./server/Spendo/Spendo/wait-for-it.sh:/wait-for-it.sh
-        env_file:
-            - ./server/Spendo/Spendo/.env
-        depends_on:
-            - db
-        command:
-            [
-                'sh',
-                '-c',
-                'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py generate_fake_data && python manage.py runserver 0.0.0.0:8000',
-            ]
+  backend:
+    build:
+      context: ./server/Spendo
+    working_dir: /code
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./server/Spendo:/code
+      - ./server/Spendo/Spendo/wait-for-it.sh:/wait-for-it.sh
+    env_file:
+      - ./server/Spendo/Spendo/.env
+    depends_on:
+      - db
+    command:
+      [
+        'sh',
+        '-c',
+        'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py generate_fake_data && python manage.py runserver 0.0.0.0:8000',
+      ]
 
-    db:
-        image: postgres:16
-        restart: always
-        env_file:
-            - ./postgres.env
-        ports:
-            - '5432:5432' # Change left port if 5432 is in use on host
-        volumes:
-            - postgres_data:/var/lib/postgresql/data
+  db:
+    image: postgres:16
+    restart: always
+    env_file:
+      - ./postgres.env
+    ports:
+      - '5432:5432' # Change left port if 5432 is in use on host
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-    postgres_data:
+  postgres_data:
 ```
 
 ### 2a. Example Dockerfile for Frontend (`client/app/Dockerfile`)
@@ -206,15 +206,15 @@ EXPOSE 8000
 - `working_dir:` — Sets the working directory for commands run in the container.
 - `ports:` — Maps container ports to host ports (e.g., `8000:8000` for backend, `5173:5173` for frontend).
 - `volumes:` — Mounts local code into the container for live reload during development, **and persists database data across container restarts and removals.**
-    - For example, the line:
-        ```yaml
-        - postgres_data:/var/lib/postgresql/data
-        ```
-        in the `db` service ensures that all PostgreSQL data is stored in a Docker-managed volume called `postgres_data`.
-    - **Data in Docker volumes is persistent:**
-        - Stopping or removing containers with `docker-compose down` does NOT delete your database data.
-        - Data will be available again when you restart your containers with `docker-compose up`.
-        - To permanently delete the data, use `docker-compose down -v` to remove the volume as well.
+  - For example, the line:
+    ```yaml
+    - postgres_data:/var/lib/postgresql/data
+    ```
+    in the `db` service ensures that all PostgreSQL data is stored in a Docker-managed volume called `postgres_data`.
+  - **Data in Docker volumes is persistent:**
+    - Stopping or removing containers with `docker-compose down` does NOT delete your database data.
+    - Data will be available again when you restart your containers with `docker-compose up`.
+    - To permanently delete the data, use `docker-compose down -v` to remove the volume as well.
 - `env_file:` — Loads environment variables from a file into the container.
 - `depends_on:` — Ensures services start in the correct order (e.g., backend waits for db).
 - `command:` — Overrides the default command, useful for running migrations or custom startup scripts.
@@ -247,22 +247,22 @@ VITE_API_URL=http://localhost:8000/api
 ### 4. Running and Managing Containers
 
 - Build and start all services:
-    ```bash
-    sudo docker compose up --build
-    ```
+  ```bash
+  sudo docker compose up --build
+  ```
 - If you change environment variables or dependencies, rebuild with `--build`.
 - To run Django management commands inside the backend container:
-    ```bash
-    sudo docker compose exec backend python manage.py makemigrations
-    sudo docker compose exec backend python manage.py migrate
-    ```
+  ```bash
+  sudo docker compose exec backend python manage.py makemigrations
+  sudo docker compose exec backend python manage.py migrate
+  ```
 
 ### 5. Database Access
 
 - You can connect to the PostgreSQL database from your host (if port mapped) or from inside the db container:
-    ```bash
-    sudo docker compose exec db psql -U spendo_user spendo_db
-    ```
+  ```bash
+  sudo docker compose exec db psql -U spendo_user spendo_db
+  ```
 
 ### 5a. Accessing the Database with GUI Tools (e.g., DBeaver, Navicat, TablePlus)
 
@@ -270,17 +270,17 @@ If you want to connect to your Dockerized PostgreSQL database using a GUI tool:
 
 - Use these connection settings in your GUI:
 
-    - **Host:** localhost
-    - **Port:** 5432 (or the port you mapped in docker-compose.yml)
-    - **User:** spendo_user (from POSTGRES_USER)
-    - **Password:** spendo_pass (from POSTGRES_PASSWORD)
-    - **Database:** spendo_db (from POSTGRES_DB)
+  - **Host:** localhost
+  - **Port:** 5432 (or the port you mapped in docker-compose.yml)
+  - **User:** spendo_user (from POSTGRES_USER)
+  - **Password:** spendo_pass (from POSTGRES_PASSWORD)
+  - **Database:** spendo_db (from POSTGRES_DB)
 
 - Make sure the database container is running and the port is mapped in docker-compose.yml:
-    ```yaml
-    ports:
-        - '5432:5432'
-    ```
+  ```yaml
+  ports:
+    - '5432:5432'
+  ```
 - You can now use tools like DBeaver, Navicat, or TablePlus to browse tables, run queries, and manage your database visually.
 
 ### 6. Common Issues
@@ -333,9 +333,9 @@ django.db.utils.OperationalError: connection to server at "db" ... failed: Conne
 **Fix:**
 
 - Updated the backend Dockerfile to install `netcat-openbsd` (the correct package for Debian-based images):
-    ```dockerfile
-    RUN apt-get update && apt-get install -y netcat-openbsd
-    ```
+  ```dockerfile
+  RUN apt-get update && apt-get install -y netcat-openbsd
+  ```
 - Rebuilt the Docker images with `docker-compose build`.
 
 ---
@@ -345,13 +345,13 @@ django.db.utils.OperationalError: connection to server at "db" ... failed: Conne
 If you want to run both your frontend and backend in a single container (for example, for a portfolio project or simple deployment):
 
 - Place a Dockerfile at the root of your project that:
-    - Builds the frontend and backend using multi-stage builds.
-    - Copies the frontend build output into a directory served by the backend or a static server.
-    - Installs Supervisor (or another process manager) to run both the backend (e.g., Django with Gunicorn) and a static file server for the frontend.
-    - Copies your backend .env file into the image (if needed) and ensures your backend loads environment variables from it (using python-dotenv or similar).
+  - Builds the frontend and backend using multi-stage builds.
+  - Copies the frontend build output into a directory served by the backend or a static server.
+  - Installs Supervisor (or another process manager) to run both the backend (e.g., Django with Gunicorn) and a static file server for the frontend.
+  - Copies your backend .env file into the image (if needed) and ensures your backend loads environment variables from it (using python-dotenv or similar).
 - Example files:
-    - `Dockerfile` (root): Multi-stage build for both frontend and backend, runs Supervisor.
-    - `supervisord.conf` (root): Supervisor config to run both processes.
+  - `Dockerfile` (root): Multi-stage build for both frontend and backend, runs Supervisor.
+  - `supervisord.conf` (root): Supervisor config to run both processes.
 - You do NOT need docker-compose.yml for this setup. Everything runs in one container.
 - This is ideal for portfolio/demo projects where simplicity is more important than scalability.
 
@@ -452,34 +452,34 @@ POSTGRES_PASSWORD=spendo_pass
 
 ```json
 {
-    "name": "app",
-    "private": true,
-    "version": "0.0.0",
-    "type": "module",
-    "scripts": {
-        "dev": "vite",
-        "build": "tsc -b && vite build",
-        "lint": "eslint .",
-        "preview": "vite preview",
-        "start": "vite preview --port $PORT"
-    },
-    "dependencies": {
-        "react": "^19.1.0",
-        "react-dom": "^19.1.0"
-    },
-    "devDependencies": {
-        "@eslint/js": "^9.25.0",
-        "@types/react": "^19.1.2",
-        "@types/react-dom": "^19.1.2",
-        "@vitejs/plugin-react": "^4.4.1",
-        "eslint": "^9.25.0",
-        "eslint-plugin-react-hooks": "^5.2.0",
-        "eslint-plugin-react-refresh": "^0.4.19",
-        "globals": "^16.0.0",
-        "typescript": "~5.8.3",
-        "typescript-eslint": "^8.30.1",
-        "vite": "^6.3.5"
-    }
+  "name": "app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "start": "vite preview --port $PORT"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5"
+  }
 }
 ```
 
@@ -502,38 +502,38 @@ You do NOT need docker-compose.yml for this single-container setup. Use this for
 - You do NOT need separate Dockerfiles in the frontend or backend folders for this setup. The single root-level Dockerfile handles building both the frontend and backend using multi-stage builds.
 - Only use nested (per-service) Dockerfiles if you want to build and run the frontend and backend as separate containers (e.g., with docker-compose).
 - For this all-in-one approach:
-    - The root Dockerfile builds the frontend, then the backend, then combines them in the final image.
-    - Supervisor runs both the Django backend and serves the built frontend static files.
-    - The frontend is served as static files by Django (not via the Vite dev server).
+  - The root Dockerfile builds the frontend, then the backend, then combines them in the final image.
+  - Supervisor runs both the Django backend and serves the built frontend static files.
+  - The frontend is served as static files by Django (not via the Vite dev server).
 
 #### Steps to Build & Run
 
 1. Place your `.env` file for Django in the correct directory (where `manage.py` can find it, e.g., `/code/.env` inside the container).
 2. Build the Docker image:
-    ```bash
-    docker build -t spendo-app .
-    ```
+   ```bash
+   docker build -t spendo-app .
+   ```
 3. Run the container:
-    ```bash
-    docker run -p 8000:8000 spendo-app
-    ```
+   ```bash
+   docker run -p 8000:8000 spendo-app
+   ```
 4. Access your app at `http://localhost:8000/`.
 
 #### Troubleshooting
 
 - If you see `DisallowedHost` errors, ensure your `.env` contains:
-    ```
-    ALLOWED_HOSTS=localhost,127.0.0.1
-    ```
-    and rebuild the image.
+  ```
+  ALLOWED_HOSTS=localhost,127.0.0.1
+  ```
+  and rebuild the image.
 - If Django crashes with `ModuleNotFoundError: No module named 'django'`, make sure the Dockerfile installs requirements in the final stage.
 - If you update `.env` or dependencies, rebuild the image and restart the container.
 - To debug inside the container:
-    ```bash
-    docker run -it spendo-app /bin/bash
-    # Then run:
-    python manage.py runserver 0.0.0.0:8000
-    ```
+  ```bash
+  docker run -it spendo-app /bin/bash
+  # Then run:
+  python manage.py runserver 0.0.0.0:8000
+  ```
 
 ---
 
@@ -562,6 +562,18 @@ Leave this terminal open. In a new terminal, you can now run Docker commands, fo
 sudo docker run hello-world
 ```
 
+Run the following if you need to create the mock data locally:
+
+```bash
+docker compose exec backend python manage.py generate_fake_data
+```
+
+Run the following if you need to reset the container including the database:
+
+```bash
+docker compose down -v
+```
+
 If you want a more integrated experience, consider installing Docker Desktop for Windows and enabling WSL integration, which allows you to use Docker from within WSL without starting the daemon manually.
 
 ---
@@ -571,33 +583,33 @@ If you want a more integrated experience, consider installing Docker Desktop for
 ### Backend Dockerfile (`server/Spendo/Dockerfile`)
 
 - **Added netcat-openbsd:**
-    - To support the `wait-for-it.sh` script, the following line was added:
-        ```dockerfile
-        RUN apt-get update && apt-get install -y netcat-openbsd
-        ```
+  - To support the `wait-for-it.sh` script, the following line was added:
+    ```dockerfile
+    RUN apt-get update && apt-get install -y netcat-openbsd
+    ```
 - **No CMD specified:**
-    - The container's startup command is now controlled by `docker-compose.yml` for flexibility.
+  - The container's startup command is now controlled by `docker-compose.yml` for flexibility.
 
 ### docker-compose.yml
 
 - **Backend service changes:**
-    - **Volume mount for wait-for-it.sh:**
-        ```yaml
-        - ./server/Spendo/Spendo/wait-for-it.sh:/wait-for-it.sh
-        ```
-    - **Startup command:**
-        - The backend now waits for the database to be ready, runs migrations, generates fake data, and then starts the server:
-        ```yaml
-        command:
-            [
-                'sh',
-                '-c',
-                'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py generate_fake_data && python manage.py runserver 0.0.0.0:8000',
-            ]
-        ```
-    - **Why this matters:**
-        - Ensures the backend only starts after the database is ready.
-        - Automatically applies migrations and generates fake data on startup.
-        - All startup logic is now easily editable in `docker-compose.yml` without rebuilding the image.
+  - **Volume mount for wait-for-it.sh:**
+    ```yaml
+    - ./server/Spendo/Spendo/wait-for-it.sh:/wait-for-it.sh
+    ```
+  - **Startup command:**
+    - The backend now waits for the database to be ready, runs migrations, generates fake data, and then starts the server:
+    ```yaml
+    command:
+      [
+        'sh',
+        '-c',
+        'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py generate_fake_data && python manage.py runserver 0.0.0.0:8000',
+      ]
+    ```
+  - **Why this matters:**
+    - Ensures the backend only starts after the database is ready.
+    - Automatically applies migrations and generates fake data on startup.
+    - All startup logic is now easily editable in `docker-compose.yml` without rebuilding the image.
 
 ---
