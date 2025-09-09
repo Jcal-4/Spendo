@@ -24,17 +24,27 @@ const Chatbot = (props: StatsSegmentsProps) => {
     }
   }, [messages, open]);
 
+  // Utility to get cookie value
+  function getCookie(name: string) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift();
+  }
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
     setMessages([...messages, { from: 'user', text: input }]);
     setInput('');
     // Simulate bot response
+    const csrftoken = getCookie('csrftoken');
     const response = await fetch(`${apiUrl}/openai/chatbot/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken || '',
       },
+      credentials: 'include',
       body: JSON.stringify({ user_balance: props.user_balance, user_message: input }),
     });
     const data = await response.json();
