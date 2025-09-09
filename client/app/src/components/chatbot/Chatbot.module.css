@@ -29,8 +29,8 @@
 }
 
 .chatWindow {
-  width: 400px;
-  height: 600px;
+  width: 450px;
+  height: 650px;
   background: rgba(24, 24, 32, 0.92);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
@@ -56,13 +56,14 @@
 .header {
   background: linear-gradient(135deg, #18181b 60%, #6366f1 100%);
   color: #fff;
-  padding: 8px 1rem;
+  padding: 4px 1rem;
   font-weight: 700;
   display: flex;
   justify-content: space-between;
   align-items: center;
   letter-spacing: 0.02em;
-  font-size: 1.1rem;
+  font-size: 1.0rem;
+  border-bottom: 1.5px solid #232946;
 }
 .closeBtn {
   background: none;
@@ -93,8 +94,8 @@
   color: #a5b4fc;
   padding: 0.4rem 0.8rem;
   border-radius: 1.3rem 1.3rem 1.3rem 0.5rem;
-  max-width: 80%;
-  font-size: 14px;
+  max-width: 85%;
+  font-size: 13.5px;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
 }
 .userMsg {
@@ -103,14 +104,14 @@
   color: #fff;
   padding: 0.4rem 0.8rem;
   border-radius: 1.3rem 1.3rem 0.5rem 1.3rem;
-  max-width: 80%;
-  font-size: 14px;
+  max-width: 85%;
+  font-size: 13.5px;
   box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
 }
 
 .inputArea {
   display: flex;
-  padding: 0.8rem 0.8rem 0.8rem 1rem;
+  padding: 0.6rem 0.6rem 0.6rem 1rem;
   background: rgba(24, 24, 32, 0.98);
   border-top: 1.5px solid #232946;
 }
@@ -118,7 +119,7 @@
   flex: 1;
   border: none;
   border-radius: 1.2rem;
-  padding: 0.7rem 1.1rem;
+  padding: 0.6rem 1.0rem;
   font-size: 14px;
   background: #232946;
   color: #e0e7ff;
@@ -137,8 +138,8 @@
   color: #fff;
   border: none;
   border-radius: 50%;
-  width: 42px;
-  height: 42px;
+  width: 35px;
+  height: 35px;
   font-size: 1.3rem;
   cursor: pointer;
   display: flex;

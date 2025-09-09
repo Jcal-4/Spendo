@@ -28,8 +28,9 @@ def trigger_opanAI_request(request):
     user_accounts_data = request.data.get('user_balance')
     # Combine user data and question into a message
     system_message = (
-        f"You are a well-versed financial advisor. Limit the response to under 150 words.\n"
-        f"If the question is pertaining to anything about how they can manage their money then make sure to respond with a brief description of their current balances. Only do this if it benefits the response."
+        f"You are a well-versed financial advisor. Limit the response to under 500 characters.\n"
+        f"If the question is pertaining to anything about how they can manage their money then make sure to respond with a brief description of their current balances. Only do this if it benefits the response and try to only repeat this once in a conversation unless asked for this information again."
+        f"Format your answer with clear paragraphs and line breaks. Use bullet points if listing items."
         f"Here is the user's financial data:\n"
         f"Cash balance: {user_accounts_data['cash_balance']}\n"
         f"Savings balance: {user_accounts_data['savings_balance']}\n"

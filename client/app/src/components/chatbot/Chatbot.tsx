@@ -50,9 +50,6 @@ const Chatbot = (props: StatsSegmentsProps) => {
     const data = await response.json();
     console.log('openAI Response: ', data);
     setMessages((msgs) => [...msgs, { from: 'bot', text: data.result }]);
-    // setTimeout(() => {
-    //   setMessages((msgs) => [...msgs, { from: 'bot', text: "I'm just a demo chatbot!" }]);
-    // }, 600);
   };
 
   return (
@@ -77,7 +74,15 @@ const Chatbot = (props: StatsSegmentsProps) => {
           <div className={styles.messages}>
             {messages.map((msg, idx) => (
               <div key={idx} className={msg.from === 'user' ? styles.userMsg : styles.botMsg}>
-                {msg.text}
+                {msg.from === 'bot'
+                  ? msg.text.split('\n\n').map((para, i) => (
+                      <div key={i} style={{ marginBottom: '1em' }}>
+                        {para.split('\n').map((line, j) => (
+                          <div key={j}>{line}</div>
+                        ))}
+                      </div>
+                    ))
+                  : msg.text}
               </div>
             ))}
             <div ref={chatEndRef} />
@@ -100,5 +105,7 @@ const Chatbot = (props: StatsSegmentsProps) => {
     </div>
   );
 };
+// Fix the issue with adding more text than the chatbot input bot can handle. currently it scrolls to the right but i want it to instead expand down.
+// Fix the issue with ai response looking like it's just one long paragraph
 
 export default Chatbot;
