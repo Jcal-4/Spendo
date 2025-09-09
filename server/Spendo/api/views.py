@@ -42,14 +42,15 @@ def trigger_opanAI_request(request):
         {"role": "user", "content": user_message}
     ]
 
-    response = client.chat.completions.create(
-        model="gpt-5-nano",
-        messages=messages
-    )
+    # response = client.chat.completions.create(
+    #     model="gpt-5-nano",
+    #     messages=messages
+    # )
     
-    if not response:
-        return Response('No response from openAI')
-    return Response({"result": response.choices[0].message.content})
+    # if not response:
+    #     return Response('No response from openAI')
+    # return Response({"result": response.choices[0].message.content})
+    return Response({"result": "fake return"})
 
 @api_view(['GET'])
 def get_user_accounts(request, user_id):
