@@ -3,7 +3,16 @@ import styles from './Chatbot.module.css';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-const Chatbot: React.FC = (props) => {
+interface StatsSegmentsProps {
+  user_balance: {
+    cash_balance?: number;
+    savings_balance?: number;
+    investing_retirement?: number;
+    total_balance?: number;
+  };
+}
+
+const Chatbot = (props: StatsSegmentsProps) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([{ from: 'bot', text: 'Hi! How can I help you today?' }]);
   const [input, setInput] = useState('');
