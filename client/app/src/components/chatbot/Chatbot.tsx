@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './Chatbot.module.css';
 
-const Chatbot: React.FC = () => {
+const apiUrl = import.meta.env.VITE_API_URL;
+
+const Chatbot: React.FC = (props) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([{ from: 'bot', text: 'Hi! How can I help you today?' }]);
   const [input, setInput] = useState('');
@@ -13,15 +15,25 @@ const Chatbot: React.FC = () => {
     }
   }, [messages, open]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
     setMessages([...messages, { from: 'user', text: input }]);
     setInput('');
     // Simulate bot response
-    setTimeout(() => {
-      setMessages((msgs) => [...msgs, { from: 'bot', text: "I'm just a demo chatbot!" }]);
-    }, 600);
+    const response = await fetch(`${apiUrl}/openai/chatbot/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_balance: props.user_balance, user_message: input }),
+    });
+    const data = await response.json();
+    console.log('openAI Response: ', data);
+    setMessages((msgs) => [...msgs, { from: 'bot', text: data.result }]);
+    // setTimeout(() => {
+    //   setMessages((msgs) => [...msgs, { from: 'bot', text: "I'm just a demo chatbot!" }]);
+    // }, 600);
   };
 
   return (

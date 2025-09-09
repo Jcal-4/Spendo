@@ -95,7 +95,7 @@ function Homepage() {
           )}
         </div>
         <FooterLinks />
-        {state.isAuthenticated && <Chatbot />}
+        {state.isAuthenticated && <Chatbot user_balance={user_balance} />}
       </div>
     </>
   );

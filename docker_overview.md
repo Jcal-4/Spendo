@@ -81,6 +81,7 @@ To use Docker, you must first install it on your system. Follow the official ins
 - Clone the repository.
 - Copy `.env.example` files to `.env` and fill in any required values (or create `.env` files as documented).
 - Run `docker compose up --build` to build and start all services.
+- Run `OPENAI_API_KEY=your_api_key_here docker-compose up` to build and start service with openAI key saved in your shell
 - Use the documented commands to run migrations or other setup steps inside containers if needed.
 
 > **Note:**

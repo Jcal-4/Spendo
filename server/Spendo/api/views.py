@@ -9,9 +9,45 @@ from .serializer import CustomUserSerializer
 from .services.user_service import get_users_by_email, get_user_by_username, create_user, get_accounts_by_userid
 from django.views.generic import View
 from django.http import FileResponse
+from openai import OpenAI
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
+openai_api_key = os.getenv('OPENAI_API_KEY')
+client = OpenAI(api_key=openai_api_key)
+
 # Define type of request with api_view
+
+@api_view(['POST'])
+def trigger_opanAI_request(request):
+    user_message = request.data.get('user_message')
+    # user_accounts_data = get_accounts_by_userid(request.data.get('user_id'))
+    user_accounts_data = request.data.get('user_balance')
+    # Combine user data and question into a message
+    system_message = (
+        f"You are a well-versed financial advisor. Limit the response to under 150 words.\n"
+        f"If the question is pertaining to anything about how they can manage their money then make sure to respond with a brief description of their current balances. Only do this if it benefits the response."
+        f"Here is the user's financial data:\n"
+        f"Cash balance: {user_accounts_data['cash_balance']}\n"
+        f"Savings balance: {user_accounts_data['savings_balance']}\n"
+        f"Investing/Retirement: {user_accounts_data['investing_retirement']}"
+    )
+
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    response = client.chat.completions.create(
+        model="gpt-5-nano",
+        messages=messages
+    )
+    
+    if not response:
+        return Response('No response from openAI')
+    return Response({"result": response.choices[0].message.content})
 
 @api_view(['GET'])
 def get_user_accounts(request, user_id):

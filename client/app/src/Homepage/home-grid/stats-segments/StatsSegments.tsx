@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IconArrowUpRight, IconDeviceAnalytics } from '@tabler/icons-react';
+import { IconDeviceAnalytics } from '@tabler/icons-react';
 import { Box, Group, Paper, Progress, SimpleGrid, Text } from '@mantine/core';
 import classes from './StatsSegments.module.css';
 
