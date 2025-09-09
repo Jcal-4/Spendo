@@ -1,4 +1,5 @@
 from rest_framework.decorators import api_view
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -20,6 +21,7 @@ client = OpenAI(api_key=openai_api_key)
 
 # Define type of request with api_view
 
+@csrf_exempt
 @api_view(['POST'])
 def trigger_opanAI_request(request):
     user_message = request.data.get('user_message')
