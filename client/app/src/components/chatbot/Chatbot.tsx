@@ -75,8 +75,8 @@ const Chatbot = (props: StatsSegmentsProps) => {
             {messages.map((msg, idx) => (
               <div key={idx} className={msg.from === 'user' ? styles.userMsg : styles.botMsg}>
                 {msg.from === 'bot'
-                  ? msg.text.split('\n\n').map((para, i) => (
-                      <div key={i} style={{ marginBottom: '1em' }}>
+                  ? msg.text.split('\n\n').map((para, i, arr) => (
+                      <div key={i} style={i === arr.length - 1 ? undefined : { marginBottom: '1em' }}>
                         {para.split('\n').map((line, j) => (
                           <div key={j}>{line}</div>
                         ))}

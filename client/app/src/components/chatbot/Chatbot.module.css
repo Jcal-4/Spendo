@@ -92,7 +92,7 @@
   align-self: flex-start;
   background: linear-gradient(135deg, #232946 60%, #6366f1 100%);
   color: #a5b4fc;
-  padding: 0.4rem 0.8rem;
+  padding: 0.6rem 0.4rem 0.4rem 0.6rem;
   border-radius: 1.3rem 1.3rem 1.3rem 0.5rem;
   max-width: 85%;
   font-size: 13.5px;
@@ -102,7 +102,7 @@
   align-self: flex-end;
   background: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
   color: #fff;
-  padding: 0.4rem 0.8rem;
+  padding: 0.4rem 0.6rem;
   border-radius: 1.3rem 1.3rem 0.5rem 1.3rem;
   max-width: 85%;
   font-size: 13.5px;
