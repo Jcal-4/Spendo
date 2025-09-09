@@ -88,13 +88,18 @@ const Chatbot = (props: StatsSegmentsProps) => {
             <div ref={chatEndRef} />
           </div>
           <form className={styles.inputArea} onSubmit={handleSend}>
-            <input
-              type="text"
+            <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+              }}
               placeholder="Type your message..."
               className={styles.input}
               autoFocus
+              rows={1}
+              style={{ resize: 'none', overflow: 'hidden' }}
             />
             <button type="submit" className={styles.sendBtn} aria-label="Send">
               ➤
