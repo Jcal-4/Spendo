@@ -31,7 +31,11 @@ def trigger_openAI_request(request):
         return Response("Error parsing OpenAI response.")
     if not parsed.get("Finance_Question"):
         return Response("Question does not pertain to finances please ask another question.")
-    return Response(parsed.get("Tentative_Response"))
+    if not parsed.get("Valid_Prompt_Message"):
+        return Response(parsed.get("Tentative_Response"))
+    return Response(parsed.get("Monetary_Balance_Query"))
+    
+        
 
 @api_view(['GET'])
 def get_user_accounts(request, user_id):

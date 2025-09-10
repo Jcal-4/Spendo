@@ -47,9 +47,14 @@ const Chatbot = (props: StatsSegmentsProps) => {
       credentials: 'include',
       body: JSON.stringify({ user_balance: props.user_balance, user_message: input }),
     });
+    console.log('response: ', response);
     const data = await response.json();
     console.log('openAI Response: ', data);
-    setMessages((msgs) => [...msgs, { from: 'bot', text: data }]);
+    if (data == true) {
+      setMessages((msgs) => [...msgs, { from: 'bot', text: "true" }]);
+    } else {
+      setMessages((msgs) => [...msgs, { from: 'bot', text: data }]);
+    }
   };
 
   return (
