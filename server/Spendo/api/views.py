@@ -8,49 +8,30 @@ from rest_framework.permissions import IsAuthenticated
 from .models import CustomUser
 from .serializer import CustomUserSerializer
 from .services.user_service import get_users_by_email, get_user_by_username, create_user, get_accounts_by_userid
+from .services.OpenAI_service import analyze_user_message
 from django.views.generic import View
 from django.http import FileResponse
-from openai import OpenAI
+import json
 import os
-
-from dotenv import load_dotenv
-load_dotenv()
-
-openai_api_key = os.getenv('OPENAI_API_KEY')
-client = OpenAI(api_key=openai_api_key)
 
 # Define type of request with api_view
 
 @api_view(['POST'])
-def trigger_opanAI_request(request):
+def trigger_openAI_request(request):
     user_message = request.data.get('user_message')
-    # user_accounts_data = get_accounts_by_userid(request.data.get('user_id'))
     user_accounts_data = request.data.get('user_balance')
-    # Combine user data and question into a message
-    system_message = (
-        f"You are a well-versed financial advisor. Limit the response to under 500 characters.\n"
-        f"If the question is pertaining to anything about how they can manage their money then make sure to respond with a brief description of their current balances. Only do this if it benefits the response and try to only repeat this once in a conversation unless asked for this information again."
-        f"Format your answer with clear paragraphs and line breaks. Use bullet points if listing items."
-        f"Here is the user's financial data:\n"
-        f"Cash balance: {user_accounts_data['cash_balance']}\n"
-        f"Savings balance: {user_accounts_data['savings_balance']}\n"
-        f"Investing/Retirement: {user_accounts_data['investing_retirement']}"
-    )
-
-    messages = [
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": user_message}
-    ]
-
-    response = client.chat.completions.create(
-        model="gpt-5-nano",
-        messages=messages
-    )
-    
-    if not response:
-        return Response('No response from openAI')
-    return Response({"result": response.choices[0].message.content})
-    # return Response({"result": "fake return"})
+    result = analyze_user_message(user_message)
+    output_content = result.output[1].content[0].text
+    output_content = output_content.strip().lstrip('\ufeff')
+    print("\033[92moutput_content repr:\033[0m", repr(output_content))  # Debug: see invisible chars
+    try:
+        parsed = json.loads(output_content)
+    except Exception as e:
+        print("JSON decode error:", e)
+        return Response("Error parsing OpenAI response.")
+    if not parsed.get("Finance_Question"):
+        return Response("Question does not pertain to finances please ask another question.")
+    return Response(parsed.get("Tentative_Response"))
 
 @api_view(['GET'])
 def get_user_accounts(request, user_id):

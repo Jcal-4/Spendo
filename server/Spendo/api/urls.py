@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import trigger_opanAI_request, get_user_accounts, get_customusers, get_customuser_by_username, create_customuser, FrontendAppView, UserMeView, LoginView, LogoutView
+from .views import trigger_openAI_request, get_user_accounts, get_customusers, get_customuser_by_username, create_customuser, FrontendAppView, UserMeView, LoginView, LogoutView
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 
@@ -21,5 +21,5 @@ urlpatterns = [
     path('customuser/<username>/', get_customuser_by_username, name='get_customuser_by_username' ),
     # Users accounts and transactions
     path('customuser/<int:user_id>/accounts/', get_user_accounts, name='get_user_accounts'),
-    path('openai/chatbot/', trigger_opanAI_request, name ='trigger_openAI_request')
+    path('openai/chatbot/', trigger_openAI_request, name ='trigger_openAI_request')
 ]
