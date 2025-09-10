@@ -51,7 +51,7 @@ const Chatbot = (props: StatsSegmentsProps) => {
     const data = await response.json();
     console.log('openAI Response: ', data);
     if (data == true) {
-      setMessages((msgs) => [...msgs, { from: 'bot', text: "true" }]);
+      setMessages((msgs) => [...msgs, { from: 'bot', text: 'Monetary_Balance_Query: true' }]);
     } else {
       setMessages((msgs) => [...msgs, { from: 'bot', text: data }]);
     }
