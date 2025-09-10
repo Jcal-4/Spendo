@@ -49,7 +49,7 @@ const Chatbot = (props: StatsSegmentsProps) => {
     });
     const data = await response.json();
     console.log('openAI Response: ', data);
-    setMessages((msgs) => [...msgs, { from: 'bot', text: data.result }]);
+    setMessages((msgs) => [...msgs, { from: 'bot', text: data }]);
   };
 
   return (

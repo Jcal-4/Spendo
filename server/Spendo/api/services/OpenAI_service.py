@@ -7,7 +7,7 @@ def analyze_user_message(message):
     response = client.responses.create(
         prompt={
             "id": "pmpt_68c1c8c9b8908190add547c625d1be4004d1e9d14ef967a3",
-            "version": "5"
+            "version": "7"
         },
         input=[
             {

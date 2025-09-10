@@ -22,8 +22,8 @@ def trigger_openAI_request(request):
     user_accounts_data = request.data.get('user_balance')
     result = analyze_user_message(user_message)
     output_content = result.output[1].content[0].text
-    output_content = output_content.strip().lstrip('\ufeff')
-    print("\033[92moutput_content repr:\033[0m", repr(output_content))  # Debug: see invisible chars
+    # output_content = output_content.strip().lstrip('\ufeff')
+    print("\033[92moutput_content repr:\033[0m",output_content)  # Debug: see invisible chars
     try:
         parsed = json.loads(output_content)
     except Exception as e:
