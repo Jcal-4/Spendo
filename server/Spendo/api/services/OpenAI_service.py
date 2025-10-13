@@ -23,7 +23,7 @@ def analyze_user_message(message):
     
     
 
-# An example if a quick custome prompt is needed
+# An example if a quick custom prompt is needed
 # def backened_prompt_example(request):
 #     user_message = request.data.get('user_message')
 #     # user_accounts_data = get_accounts_by_userid(request.data.get('user_id'))

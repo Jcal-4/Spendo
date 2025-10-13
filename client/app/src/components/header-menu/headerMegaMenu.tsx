@@ -62,7 +62,7 @@ export function HeaderMegaMenu() {
                                 </Button> */}
               </div>
             ) : (
-              <Button onClick={() => redirectURL('LOGIN')} variant="default">
+              <Button onClick={() => redirectURL('LOGIN')} >
                 Log in
               </Button>
             )}
