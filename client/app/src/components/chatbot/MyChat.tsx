@@ -6,6 +6,7 @@ export function MyChat() {
   const { control } = useChatKit({
     api: {
       async getClientSecret(existing) {
+        const csrftoken = getCookie('csrftoken');
         if (existing) {
           // implement session refresh
         }
@@ -14,6 +15,7 @@ export function MyChat() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken || '',
           },
         });
         const { client_secret } = await res.json();
