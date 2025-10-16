@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import trigger_openAI_request, get_user_accounts, get_customusers, get_customuser_by_username, create_customuser, FrontendAppView, UserMeView, LoginView, LogoutView
+from .views import create_chatkit_session, trigger_openAI_request, get_user_accounts, get_customusers, get_customuser_by_username, create_customuser, FrontendAppView, UserMeView, LoginView, LogoutView
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 
@@ -10,6 +10,7 @@ def get_csrf(request):
 
 urlpatterns = [
     path('api/csrf/', get_csrf),
+    path('api/chatkit/session/', create_chatkit_session, name='create_chatkit_session'),
     path('', FrontendAppView.as_view(), name='frontend'),
     path('me/', UserMeView.as_view(), name='user-me'),
     # Session-based login/logout

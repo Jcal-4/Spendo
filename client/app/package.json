@@ -27,6 +27,7 @@
     "@mantine/nprogress": "^8.2.2",
     "@mantine/spotlight": "^8.2.2",
     "@mantine/tiptap": "^8.2.2",
+    "@openai/chatkit-react": "^1.1.1",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/vite": "^4.1.11",
     "@tiptap/extension-link": "^3.0.9",

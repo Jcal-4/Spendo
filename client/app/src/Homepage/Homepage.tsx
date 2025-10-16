@@ -10,6 +10,7 @@ import { NavbarMinimal } from '../components/navbar/NavbarMinimal';
 import { HeroText } from './hero-section/HeroText';
 import './Homepage.css';
 import Chatbot from '../components/chatbot/Chatbot';
+import MyChat from '../components/chatbot/MyChat';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -91,11 +92,14 @@ function Homepage() {
               <div className="flex flex-1 min-w-0 min-h-[500px] align-center justify-center">
                 <LeadGrid user_balance={user_balance} />
               </div>
+              <div>
+                <MyChat />
+              </div>
             </div>
           )}
         </div>
         <FooterLinks />
-        {state.isAuthenticated && <Chatbot user_balance={user_balance} />}
+        {/* {state.isAuthenticated && <Chatbot user_balance={user_balance} />} */}
       </div>
     </>
   );
