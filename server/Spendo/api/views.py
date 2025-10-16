@@ -23,6 +23,7 @@ from openai import OpenAI
 # Define type of request with api_view
 
 
+@csrf_exempt
 @api_view(["POST"])
 def create_chatkit_session(request):
     import requests
