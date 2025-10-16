@@ -10,7 +10,7 @@ export function MyChat() {
           // implement session refresh
         }
 
-        const res = await fetch(`${apiUrl}/api/chatkit/session/`, {
+        const res = await fetch(`${apiUrl}/chatkit/session/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

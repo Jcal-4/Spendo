@@ -10,7 +10,7 @@ def get_csrf(request):
 
 urlpatterns = [
     path('api/csrf/', get_csrf),
-    path('api/chatkit/session/', create_chatkit_session, name='create_chatkit_session'),
+    path('chatkit/session/', create_chatkit_session, name='create_chatkit_session'),
     path('', FrontendAppView.as_view(), name='frontend'),
     path('me/', UserMeView.as_view(), name='user-me'),
     # Session-based login/logout
