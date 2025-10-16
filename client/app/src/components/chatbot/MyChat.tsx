@@ -3,6 +3,13 @@ import { ChatKit, useChatKit } from '@openai/chatkit-react';
 const apiUrl = import.meta.env.VITE_API_URL;
 
 export function MyChat() {
+  // Utility to get cookie value
+  function getCookie(name: string) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift();
+  }
+  
   const { control } = useChatKit({
     api: {
       async getClientSecret(existing) {
