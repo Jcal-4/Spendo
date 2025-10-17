@@ -115,7 +115,5 @@ const Chatbot = (props: StatsSegmentsProps) => {
     </div>
   );
 };
-// Fix the issue with adding more text than the chatbot input bot can handle. currently it scrolls to the right but i want it to instead expand down.
-// Fix the issue with ai response looking like it's just one long paragraph
 
 export default Chatbot;

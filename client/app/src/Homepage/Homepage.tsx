@@ -92,13 +92,14 @@ function Homepage() {
               <div className="flex flex-1 min-w-0 min-h-[500px] align-center justify-center">
                 <LeadGrid user_balance={user_balance} />
               </div>
-              <div>
+              {/* <div>
                 <MyChat />
-              </div>
+              </div> */}
             </div>
           )}
         </div>
         <FooterLinks />
+        {state.isAuthenticated && <MyChat />}
         {/* {state.isAuthenticated && <Chatbot user_balance={user_balance} />} */}
       </div>
     </>

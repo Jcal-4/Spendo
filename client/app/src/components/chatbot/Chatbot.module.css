@@ -5,11 +5,18 @@
   z-index: 1000;
 }
 
+.openAIchatbotContainer {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+
 .fab {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #232946 50%, #6366f1 100%);
+  /* background: linear-gradient(135deg, #232946 50%, #6366f1 100%); */
   color: #fff;
   border: none;
   border-radius: 50%;
