@@ -4,8 +4,21 @@ import styles from './Chatbot.module.css';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-export function MyChat() {
+interface MyChatProps {
+  user_balance: {
+    cash_balance: number;
+    savings_balance: number;
+    investing_retirement: number;
+    total_balance: number;
+  };
+}
+
+export function MyChat({ user_balance }: MyChatProps) {
   const [open, setOpen] = useState(false);
+
+  // user_balance is available for future use (e.g., passing to backend context)
+  // Currently unused but kept for potential backend integration
+  void user_balance; // Acknowledge parameter to prevent unused variable warning
 
   const { control } = useChatKit({
     api: {
@@ -41,7 +54,6 @@ export function MyChat() {
       },
     },
   });
-
 
   return (
     <div className={styles.openAIchatbotContainer}>
