@@ -6,5 +6,6 @@ dj-database-url
 python-dotenv
 django-cors-headers
 whitenoise
-openai
+openai>=1.40
 requests
+openai-chatkit>=1.0.2,<2

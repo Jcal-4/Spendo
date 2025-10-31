@@ -7,31 +7,10 @@ const apiUrl = import.meta.env.VITE_API_URL;
 export function MyChat() {
   const [open, setOpen] = useState(false);
 
-  // Utility to get cookie value
-  function getCookie(name: string) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift();
-  }
-
   const { control } = useChatKit({
     api: {
-      async getClientSecret(existing) {
-        const csrftoken = getCookie('csrftoken');
-        if (existing) {
-          // implement session refresh
-        }
-
-        const res = await fetch(`${apiUrl}/chatkit/session/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken || '',
-          },
-        });
-        const { client_secret } = await res.json();
-        return client_secret;
-      },
+      url: `${apiUrl}/chatkit/`,
+      domainKey: 'domain_pk_68f1603233888190b4b67253144535800b4aeac929b652bc',
     },
     theme: {
       colorScheme: 'dark',
@@ -62,6 +41,7 @@ export function MyChat() {
       },
     },
   });
+
 
   return (
     <div className={styles.openAIchatbotContainer}>

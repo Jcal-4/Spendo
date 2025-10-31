@@ -13,14 +13,62 @@ from .services.user_service import (
     create_user,
     get_accounts_by_userid,
 )
-from .services.OpenAI_service import analyze_user_message
+# from .services.OpenAI_service import analyze_user_message
 from django.views.generic import View
-from django.http import FileResponse
+from django.http import FileResponse, StreamingHttpResponse, JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 import json
 import os
 from openai import OpenAI
+from .chatkit_server import get_chatkit_server
+from chatkit.server import StreamingResult
 
-# Define type of request with api_view
+@csrf_exempt
+async def chatkit_endpoint(request):
+    """ChatKit SDK endpoint for handling chat requests."""
+    # Allow both GET (for health checks) and POST (for chat requests)
+    if request.method not in ["GET", "POST"]:
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    
+    # Handle GET requests (health check)
+    if request.method == "GET":
+        return JsonResponse({"status": "ok"})
+    
+    try:
+        server = get_chatkit_server()
+        payload = request.body
+        
+        if not payload:
+            return JsonResponse({"error": "Empty payload"}, status=400)
+        
+        result = await server.process(payload, {"request": request})
+        
+        if isinstance(result, StreamingResult):
+            # Return streaming response
+            response = StreamingHttpResponse(
+                result,
+                content_type="text/event-stream"
+            )
+            response['Cache-Control'] = 'no-cache'
+            response['X-Accel-Buffering'] = 'no'
+            return response
+        
+        if hasattr(result, "json"):
+            return JsonResponse(json.loads(result.json), safe=False)
+        
+        return JsonResponse(result, safe=False)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"ChatKit endpoint error: {e}")
+        print(f"Traceback: {error_details}")
+        return JsonResponse(
+            {"error": str(e), "details": error_details},
+            status=500,
+            safe=False
+        )
 
 @api_view(["POST"])
 def create_chatkit_session(request):
@@ -55,29 +103,29 @@ def create_chatkit_session(request):
         print("ChatKit session creation error:", response.text)
         return Response({"error": response.text}, status=response.status_code)
 
-
-@api_view(["POST"])
-def trigger_openAI_request(request):
-    user_message = request.data.get("user_message")
-    user_accounts_data = request.data.get("user_balance")
-    result = analyze_user_message(user_message)
-    output_content = result.output[1].content[0].text
-    # output_content = output_content.strip().lstrip('\ufeff')
-    print(
-        "\033[92moutput_content repr:\033[0m", output_content
-    )  # Debug: see invisible chars
-    try:
-        parsed = json.loads(output_content)
-    except Exception as e:
-        print("JSON decode error:", e)
-        return Response("Error parsing OpenAI response.")
-    if not parsed.get("Finance_Question"):
-        return Response(
-            "Question does not pertain to finances please ask another question."
-        )
-    if not parsed.get("Valid_Prompt_Message"):
-        return Response(parsed.get("Tentative_Response"))
-    return Response(parsed.get("Monetary_Balance_Query"))
+# TODO: Uncomment the code below when analyze_user_message is restored
+# @api_view(["POST"])
+# def trigger_openAI_request(request):
+#     user_message = request.data.get("user_message")
+#     user_accounts_data = request.data.get("user_balance")
+#     result = analyze_user_message(user_message)
+#     output_content = result.output[1].content[0].text
+#     # output_content = output_content.strip().lstrip('\ufeff')
+#     print(
+#         "\033[92moutput_content repr:\033[0m", output_content
+#     )  # Debug: see invisible chars
+#     try:
+#         parsed = json.loads(output_content)
+#     except Exception as e:
+#         print("JSON decode error:", e)
+#         return Response("Error parsing OpenAI response.")
+#     if not parsed.get("Finance_Question"):
+#         return Response(
+#             "Question does not pertain to finances please ask another question."
+#         )
+#     if not parsed.get("Valid_Prompt_Message"):
+#         return Response(parsed.get("Tentative_Response"))
+#     return Response(parsed.get("Monetary_Balance_Query"))
 
 
 @api_view(["GET"])

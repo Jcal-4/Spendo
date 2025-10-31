@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import create_chatkit_session, trigger_openAI_request, get_user_accounts, get_customusers, get_customuser_by_username, create_customuser, FrontendAppView, UserMeView, LoginView, LogoutView
+from .views import create_chatkit_session, get_user_accounts, get_customusers, get_customuser_by_username, create_customuser, FrontendAppView, UserMeView, LoginView, LogoutView, chatkit_endpoint
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 
@@ -10,7 +10,6 @@ def get_csrf(request):
 
 urlpatterns = [
     path('api/csrf/', get_csrf),
-    path('chatkit/session/', create_chatkit_session, name='create_chatkit_session'),
     path('', FrontendAppView.as_view(), name='frontend'),
     path('me/', UserMeView.as_view(), name='user-me'),
     # Session-based login/logout
@@ -22,5 +21,8 @@ urlpatterns = [
     path('customuser/<username>/', get_customuser_by_username, name='get_customuser_by_username' ),
     # Users accounts and transactions
     path('customuser/<int:user_id>/accounts/', get_user_accounts, name='get_user_accounts'),
-    path('openai/chatbot/', trigger_openAI_request, name ='trigger_openAI_request')
+    path('chatkit/session/', create_chatkit_session, name='create_chatkit_session'),
+    # ChatKit SDK endpoint for custom backend
+    path('chatkit/', chatkit_endpoint, name='chatkit_endpoint'),
+    # path('openai/chatbot/', trigger_openAI_request, name ='trigger_openAI_request')
 ]
