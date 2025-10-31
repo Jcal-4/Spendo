@@ -9,11 +9,20 @@ This document provides a complete guide for integrating OpenAI's ChatKit SDK int
 3. [Backend Setup](#backend-setup)
 4. [Frontend Setup](#frontend-setup)
 5. [Configuration Details](#configuration-details)
-6. [Troubleshooting](#troubleshooting)
-7. [Code Reusability Guide](#code-reusability-guide)
-8. [Summary of Files Created/Modified](#summary-of-files-createdmodified)
-9. [Next Steps](#next-steps)
-10. [Additional Resources](#additional-resources)
+6. [Advanced Features](#advanced-features)
+   - [Attachment Store](#attachment-store)
+   - [Client Tools Usage](#client-tools-usage)
+   - [Agents SDK Integration](#agents-sdk-integration)
+   - [Widgets](#widgets)
+   - [Thread Metadata](#thread-metadata)
+   - [Automatic Thread Titles](#automatic-thread-titles)
+   - [Progress Updates](#progress-updates)
+   - [Server Context](#server-context)
+7. [Troubleshooting](#troubleshooting)
+8. [Code Reusability Guide](#code-reusability-guide)
+9. [Summary of Files Created/Modified](#summary-of-files-createdmodified)
+10. [Next Steps](#next-steps)
+11. [Additional Resources](#additional-resources)
 
 ---
 
@@ -30,7 +39,16 @@ The ChatKit SDK enables a custom backend integration where all chat requests are
 - Troubleshooting common issues
 - Understanding code reusability across projects
 
-**Expected Time:** 30-60 minutes for complete setup (depending on familiarity with Django and React)
+**Expected Time:** 30-60 minutes for basic setup (depending on familiarity with Django and React). Additional time for implementing advanced features as needed.
+
+**Structure of This Guide:**
+
+1. **Backend Setup** (Steps 1-6): Essential Django server configuration
+2. **Frontend Setup** (Steps 1-4): React component integration
+3. **Configuration Details**: Environment and key settings
+4. **Advanced Features**: Optional enhancements (attachments, widgets, Agents SDK, etc.)
+5. **Troubleshooting**: Common issues and solutions
+6. **Code Reusability**: How to adapt this code for other projects
 
 ---
 
@@ -83,7 +101,9 @@ pip install openai-chatkit>=1.0.2,<2
 
 ### Step 2: Create Memory Store (`memory_store.py`)
 
-Create a new file `server/Spendo/api/memory_store.py` to handle thread and message persistence:
+Create a new file `server/Spendo/api/memory_store.py` to handle thread and message persistence.
+
+**Note**: This file implements the `Store` interface from ChatKit. The name "memory_store" refers to this specific implementation (an in-memory storage), while "Store" is the abstract interface it implements. You can name your file whatever you like, but it must implement the Store interface methods.
 
 ```python
 """Memory store for ChatKit thread and message persistence."""
@@ -113,7 +133,12 @@ class SimpleMemoryStore:
         return _gen_id("thread")
 
     def generate_item_id(self, item_type: str, thread: Any, context: dict[str, Any] | None = None) -> str:
-        """Generate a unique item ID (for messages, etc.)."""
+        """
+        Generate a unique item ID (for messages, etc.).
+
+        Note: In the full Store interface, item_type is StoreItemType, but this simple
+        implementation accepts str for simplicity. For production, consider using StoreItemType.
+        """
         return _gen_id("msg")
 
     async def load_thread(
@@ -227,10 +252,176 @@ class SimpleMemoryStore:
 
 **Key Points:**
 
-- `SimpleMemoryStore` implements the storage interface required by ChatKit
+- `SimpleMemoryStore` implements the **essential** storage methods required for basic ChatKit functionality
 - Methods handle pagination with `limit`, `after`, and `order` parameters
 - Result objects must have `data`, `has_more`, and `after` attributes
 - Thread IDs are generated with `"thread"` prefix, message IDs with `"msg"` prefix
+- **Note**: This is a simplified implementation for development. For production, you should implement all methods from the complete Store interface (see below), including `delete_thread_item`, `save_item`, `load_item`, and attachment methods
+
+### Complete Store Interface Reference
+
+The `Store` interface from ChatKit is an abstract base class that defines all required methods for thread and message persistence. The `SimpleMemoryStore` shown above implements a subset suitable for basic use cases. For production, you may want to implement all methods.
+
+**Source:** `chatkit/store.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import Generic
+from chatkit.store import Store, Page, StoreItemType
+from chatkit.types import ThreadItem, ThreadMetadata, Attachment
+
+class Store(ABC, Generic[TContext]):
+    # ID generation (these have default implementations, override to customize)
+    def generate_thread_id(self, context: TContext) -> str:
+        """Return a new identifier for a thread. Override this method to customize thread ID generation."""
+        return default_generate_id("thread")
+
+    def generate_item_id(
+        self, item_type: StoreItemType, thread: ThreadMetadata, context: TContext
+    ) -> str:
+        """Return a new identifier for a thread item. Override this method to customize item ID generation."""
+        return default_generate_id(item_type)
+
+    # Thread operations (abstract - must be implemented)
+    @abstractmethod
+    async def load_thread(self, thread_id: str, context: TContext) -> ThreadMetadata:
+        """Load a thread by its ID."""
+        pass
+
+    @abstractmethod
+    async def save_thread(self, thread: ThreadMetadata, context: TContext) -> None:
+        """Save or update a thread."""
+        pass
+
+    @abstractmethod
+    async def load_threads(
+        self,
+        limit: int,
+        after: str | None,
+        order: str,
+        context: TContext,
+    ) -> Page[ThreadMetadata]:
+        """Load multiple threads with pagination and ordering."""
+        pass
+
+    @abstractmethod
+    async def delete_thread(self, thread_id: str, context: TContext) -> None:
+        """Delete a thread and all its items."""
+        pass
+
+    # Thread item operations (abstract - must be implemented)
+    @abstractmethod
+    async def load_thread_items(
+        self,
+        thread_id: str,
+        after: str | None,
+        limit: int,
+        order: str,
+        context: TContext,
+    ) -> Page[ThreadItem]:
+        """Load thread items (messages, tool calls, etc.) with pagination."""
+        pass
+
+    @abstractmethod
+    async def add_thread_item(
+        self, thread_id: str, item: ThreadItem, context: TContext
+    ) -> None:
+        """Add a new item to a thread."""
+        pass
+
+    @abstractmethod
+    async def save_item(
+        self, thread_id: str, item: ThreadItem, context: TContext
+    ) -> None:
+        """Save or update an existing thread item."""
+        pass
+
+    @abstractmethod
+    async def load_item(
+        self, thread_id: str, item_id: str, context: TContext
+    ) -> ThreadItem:
+        """Load a specific thread item by ID."""
+        pass
+
+    @abstractmethod
+    async def delete_thread_item(
+        self, thread_id: str, item_id: str, context: TContext
+    ) -> None:
+        """Delete a specific thread item."""
+        pass
+
+    # Attachment operations (abstract - must be implemented)
+    @abstractmethod
+    async def save_attachment(self, attachment: Attachment, context: TContext) -> None:
+        """Save attachment metadata to the store."""
+        pass
+
+    @abstractmethod
+    async def load_attachment(
+        self, attachment_id: str, context: TContext
+    ) -> Attachment:
+        """Load attachment metadata by ID."""
+        pass
+
+    @abstractmethod
+    async def delete_attachment(self, attachment_id: str, context: TContext) -> None:
+        """Delete attachment metadata from the store."""
+        pass
+```
+
+**Important Notes:**
+
+- **ID Generation Methods:** `generate_thread_id` and `generate_item_id` have default implementations that use `default_generate_id()` with prefixes like `"thread"` and `"message"`. Override these methods if your integration needs deterministic or pre-allocated identifiers
+- **Default ID Format:** The default implementation prefixes identifiers using UUID4 strings (for example `thread_4f62d6a7f2c34bd084f57cfb3df9f6bd` or `msg_4f62d6a7f2c34bd084f57cfb3df9f6bd`)
+- **StoreItemType:** The `item_type` parameter in `generate_item_id` is of type `StoreItemType`, which can be values like `"message"`, `"tool_call"`, `"task"`, `"workflow"`, or `"attachment"`
+- **Database Implementation:** When implementing the store for relational databases, the recommended approach is to serialize models into JSON-typed columns instead of separating model fields across multiple columns. This allows for Thread/Attachment/ThreadItem type shapes to change between library versions
+- **Missing Methods:** The `SimpleMemoryStore` example above doesn't implement `delete_thread_item`, `save_item`, `load_item`, and attachment methods. Add these for a complete implementation
+
+#### Customizing ID Generation
+
+You can override the ID generation methods to customize how IDs are created:
+
+```python
+from chatkit.store import Store, default_generate_id
+from typing import Any
+
+class CustomStore(Store[dict[str, Any]]):
+    def generate_thread_id(self, context: dict[str, Any]) -> str:
+        """Custom thread ID generation - e.g., use database sequence."""
+        # Example: Use database sequence
+        # return f"thread_{self.db.get_next_sequence('threads')}"
+
+        # Example: Use timestamp + random suffix
+        import time
+        import random
+        return f"thread_{int(time.time())}_{random.randint(1000, 9999)}"
+
+        # Or use default implementation:
+        # return default_generate_id("thread")
+
+    def generate_item_id(
+        self, item_type: StoreItemType, thread: ThreadMetadata, context: dict[str, Any]
+    ) -> str:
+        """Custom item ID generation - e.g., include thread ID prefix."""
+        # Example: Include thread ID in item ID
+        base_id = default_generate_id(item_type)
+        return f"{thread.id}_{base_id}"
+
+        # Or use default implementation:
+        # return default_generate_id(item_type)
+```
+
+Similarly for `AttachmentStore`:
+
+```python
+class CustomAttachmentStore(AttachmentStore[dict[str, Any]]):
+    def generate_attachment_id(self, mime_type: str, context: dict[str, Any]) -> str:
+        """Custom attachment ID generation."""
+        # Example: Include mime type in ID
+        base_id = default_generate_id("attachment")
+        mime_prefix = mime_type.split('/')[0] if '/' in mime_type else mime_type
+        return f"{mime_prefix}_{base_id}"
+```
 
 ### Step 3: Create ChatKit Server (`chatkit_server.py`)
 
@@ -292,6 +483,13 @@ class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
         user_text = _user_message_text(input)
         if not user_text:
             return
+
+        # Note: If you've enabled model or tool options in the composer,
+        # they'll appear in input.inference_options. Your integration is
+        # responsible for handling these values when performing inference.
+        # Example:
+        # inference_options = input.inference_options if hasattr(input, 'inference_options') else None
+        # model = inference_options.model if inference_options else "gpt-4"
 
         # Call the existing run_workflow function
         try:
@@ -368,15 +566,14 @@ Add the following to `server/Spendo/api/views.py`:
 **At the top of the file, add imports:**
 
 ```python
+import json
+from django.http import StreamingHttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from .chatkit_server import get_chatkit_server
 from chatkit.server import StreamingResult
 ```
 
-**Note:** Ensure these imports are added alongside your existing imports. If `StreamingHttpResponse` is not already imported, you may need to add:
-
-```python
-from django.http import StreamingHttpResponse
-```
+**Note:** Adjust imports based on what's already in your file. You may need to add or remove imports depending on what's already imported in your `views.py` file.
 
 **Add the endpoint function:**
 
@@ -663,6 +860,585 @@ To implement persistent storage:
 2. Keep the same method signatures
 3. Ensure pagination (`has_more`, `after`) works correctly
 4. Consider thread archiving and cleanup strategies
+
+---
+
+## Advanced Features
+
+This section covers advanced ChatKit features that go beyond basic chat functionality. These features are **optional** and can be implemented as needed:
+
+- **Attachment Store**: Handle file uploads and attachments
+- **Client Tools**: Trigger client-side callbacks from server-side agents
+- **Agents SDK Integration**: Integrate with OpenAI's Agents SDK for more powerful workflows
+- **Widgets**: Display rich UI components in chat conversations
+- **Thread Metadata**: Store custom data associated with threads
+- **Automatic Thread Titles**: Generate conversation titles automatically
+- **Progress Updates**: Show progress indicators for long-running operations
+- **Server Context**: Pass custom context data through the request pipeline
+
+**Note**: You can implement these features incrementally. Start with the basic setup from earlier sections, then add advanced features as your application requires them.
+
+### Attachment Store
+
+Users can upload attachments (files and images) to include with chat messages. You are responsible for providing a storage implementation and handling uploads. The `attachment_store` argument to `ChatKitServer` should implement the `AttachmentStore` interface. If not provided, operations on attachments will raise an error.
+
+#### Attachment Store Interface
+
+**Source:** `chatkit/store.py`
+
+The `AttachmentStore` interface handles attachment metadata storage. Note that the actual file bytes are typically stored separately (e.g., in S3, GCS, or local filesystem).
+
+```python
+from abc import ABC, abstractmethod
+from typing import Generic
+from chatkit.store import AttachmentStore
+from chatkit.types import Attachment, AttachmentCreateParams
+
+class AttachmentStore(ABC, Generic[TContext]):
+    @abstractmethod
+    async def delete_attachment(self, attachment_id: str, context: TContext) -> None:
+        """Delete attachment metadata from the store."""
+        pass
+
+    async def create_attachment(
+        self, input: AttachmentCreateParams, context: TContext
+    ) -> Attachment:
+        """
+        Create attachment metadata. This method must be overridden to support two-phase file upload.
+
+        Raises NotImplementedError if not overridden.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} must override create_attachment() to support two-phase file upload"
+        )
+
+    def generate_attachment_id(self, mime_type: str, context: TContext) -> str:
+        """
+        Return a new identifier for a file. Override this method to customize file ID generation.
+
+        Default implementation uses default_generate_id("attachment").
+        """
+        return default_generate_id("attachment")
+```
+
+**Key Points:**
+
+- **`generate_attachment_id`:** Has a default implementation that can be overridden for custom ID generation
+- **`create_attachment`:** Must be overridden to support two-phase file upload. If not implemented, raises `NotImplementedError`
+- **`delete_attachment`:** Abstract method that must be implemented to remove attachment metadata
+- **File Storage:** The store does not have to persist bytes itself. It can act as a proxy that issues signed URLs for upload and preview (e.g., S3/GCS/Azure), while your separate upload endpoint writes to object storage
+
+#### Upload Strategies
+
+ChatKit supports both direct uploads and two‑phase upload, configurable client-side via `ChatKitOptions.composer.attachments.uploadStrategy`.
+
+##### Direct Upload
+
+The direct upload URL is provided client-side as a create option.
+
+The client will POST `multipart/form-data` with a `file` field to that URL. The server should:
+
+1. Persist the attachment metadata (`FileAttachment | ImageAttachment`) to the data store and the file bytes to your storage
+2. Respond with JSON representation of `FileAttachment | ImageAttachment`
+
+##### Two‑Phase Upload
+
+- **Phase 1 (registration and upload URL provisioning):** The client calls `attachments.create`. ChatKit persists a `FileAttachment | ImageAttachment`, sets the `upload_url` and returns it. It's recommended to include the `id` of the `Attachment` in the `upload_url` so that you can associate the file bytes with the `Attachment`.
+
+- **Phase 2 (upload):** The client POSTs the bytes to the returned `upload_url` with `multipart/form-data` field `file`.
+
+#### Previews
+
+To render thumbnails of an image attached to a user message, set `ImageAttachment.preview_url` to a renderable URL. If you need expiring URLs, do not persist the URL; generate it on demand when returning the attachment to the client.
+
+#### Access Control
+
+**Critical Security Consideration:** Attachment metadata and file bytes are not protected by ChatKit. Each `AttachmentStore` method receives your request context so you can enforce thread- and user-level authorization before handing out attachment IDs, bytes, or signed URLs. Deny access when the caller does not own the attachment, and generate download URLs that expire quickly. Skipping these checks can leak customer data.
+
+Example implementation:
+
+```python
+class SecureAttachmentStore(AttachmentStore[dict[str, Any]]):
+    async def load_attachment(self, attachment_id: str, context: dict[str, Any]) -> Attachment:
+        user_id = context.get("userId")
+        attachment = await self.db.get_attachment(attachment_id)
+
+        # Check if user has access to this attachment
+        if not await self.can_user_access(user_id, attachment):
+            raise PermissionError("Access denied")
+
+        return attachment
+```
+
+#### Attaching Files to Agent SDK Inputs
+
+You are responsible for deciding how to attach attachments to Agent SDK inputs. You can store files in your own storage and attach them as base64-encoded payloads or upload them to the OpenAI Files API and provide the file ID to the Agent SDK.
+
+Example of creating base64-encoded payloads for attachments by customizing a `ThreadItemConverter`:
+
+```python
+import base64
+from chatkit.agents import ThreadItemConverter
+from chatkit.types import Attachment, ImageAttachment
+from agents import ResponseInputImageParam, ResponseInputFileParam
+
+async def read_attachment_bytes(attachment_id: str) -> bytes:
+    """Replace with your blob-store fetch (S3, local disk, etc.)."""
+    # Your implementation to fetch attachment bytes
+    ...
+
+class MyConverter(ThreadItemConverter):
+    async def attachment_to_message_content(
+        self, input: Attachment
+    ) -> ResponseInputContentParam:
+        content = await read_attachment_bytes(input.id)
+        data = (
+            "data:"
+            + str(input.mime_type)
+            + ";base64,"
+            + base64.b64encode(content).decode("utf-8")
+        )
+
+        if isinstance(input, ImageAttachment):
+            return ResponseInputImageParam(
+                type="input_image",
+                detail="auto",
+                image_url=data,
+            )
+
+        # Note: Agents SDK currently only supports pdf files as ResponseInputFileParam.
+        # To send other text file types, either convert them to pdf on the fly or
+        # add them as input text.
+        return ResponseInputFileParam(
+            type="input_file",
+            file_data=data,
+            filename=input.name or "unknown",
+        )
+
+# In respond(...):
+from chatkit.agents import simple_to_agent_input
+
+result = Runner.run_streamed(
+    assistant_agent,
+    await MyConverter().to_agent_input(input),
+    context=context,
+)
+```
+
+### Client Tools Usage
+
+The ChatKit server implementation can trigger client-side tools. These are client-side callbacks invoked by the agent during server-side inference.
+
+The tool must be registered both when initializing ChatKit on the client and when setting up Agents SDK on the server.
+
+To trigger a client-side tool from Agents SDK, set `ctx.context.client_tool_call` in the tool implementation with the client-side tool name and arguments. The result of the client tool execution will be provided back to the model.
+
+**Important Notes:**
+
+- The agent behavior must be set to `tool_use_behavior=StopAtTools` with all client-side tools included in `stop_at_tool_names`. This causes the agent to stop generating new messages until the client tool call is acknowledged by the ChatKit UI
+- Only one client tool call can be triggered per turn
+- Client tools are client-side callbacks invoked by the agent during server-side inference. If you're interested in client-side callbacks triggered by a user interacting with a widget, refer to [client actions](https://platform.openai.com/docs/chatkit/actions#client)
+
+Example implementation:
+
+```python
+from chatkit.agents import AgentContext, stream_agent_response
+from chatkit.types import ClientToolCall
+from agents import Agent, Runner, function_tool, RunContextWrapper, StopAtTools
+
+@function_tool(description_override="Add an item to the user's todo list.")
+async def add_to_todo_list(ctx: RunContextWrapper[AgentContext], item: str) -> None:
+    ctx.context.client_tool_call = ClientToolCall(
+        name="add_to_todo_list",
+        arguments={"item": item},
+    )
+
+assistant_agent = Agent[AgentContext](
+    model="gpt-4.1",
+    name="Assistant",
+    instructions="You are a helpful assistant",
+    tools=[add_to_todo_list],
+    tool_use_behavior=StopAtTools(stop_at_tool_names=[add_to_todo_list.name]),
+)
+
+class MyChatKitServer(ChatKitServer):
+    async def respond(
+        self,
+        thread: ThreadMetadata,
+        input: UserMessageItem | None,
+        context: Any,
+    ) -> AsyncIterator[ThreadStreamEvent]:
+        agent_context = AgentContext(
+            thread=thread,
+            store=self.store,
+            request_context=context,
+        )
+
+        result = Runner.run_streamed(
+            self.assistant_agent,
+            await simple_to_agent_input(input) if input else [],
+            context=agent_context,
+        )
+
+        async for event in stream_agent_response(agent_context, result):
+            yield event
+```
+
+### Agents SDK Integration
+
+The ChatKit server is independent of Agents SDK. As long as correct events are returned from the `respond` method, the ChatKit UI will display the conversation as expected.
+
+The ChatKit library provides helpers to integrate with Agents SDK:
+
+- **`AgentContext`** - The context type that should be used when calling Agents SDK. It provides helpers to stream events from tool calls, render widgets, and initiate client tool calls.
+
+- **`stream_agent_response`** - A helper to convert a streamed Agents SDK run into ChatKit events.
+
+- **`ThreadItemConverter`** - A helper class that you'll probably extend to convert ChatKit thread items to Agents SDK input items.
+
+- **`simple_to_agent_input`** - A helper function that uses the default thread item conversions. The default conversion is limited, but useful for getting started quickly.
+
+#### Basic Integration Pattern
+
+```python
+from chatkit.agents import AgentContext, stream_agent_response, simple_to_agent_input
+from agents import Agent, Runner
+
+class MyChatKitServer(ChatKitServer):
+    assistant_agent = Agent[AgentContext](
+        model="gpt-4.1",
+        name="Assistant",
+        instructions="You are a helpful assistant"
+    )
+
+    async def respond(
+        self,
+        thread: ThreadMetadata,
+        input: UserMessageItem | None,
+        context: Any,
+    ) -> AsyncIterator[ThreadStreamEvent]:
+        agent_context = AgentContext(
+            thread=thread,
+            store=self.store,
+            request_context=context,
+        )
+
+        result = Runner.run_streamed(
+            self.assistant_agent,
+            await simple_to_agent_input(input) if input else [],
+            context=agent_context,
+        )
+
+        async for event in stream_agent_response(agent_context, result):
+            yield event
+```
+
+#### ThreadItemConverter
+
+Extend `ThreadItemConverter` when your integration supports:
+
+- Attachments
+- @-mentions (entity tagging)
+- `HiddenContextItem`
+- Custom thread item formats
+
+Example:
+
+```python
+from chatkit.agents import ThreadItemConverter
+from chatkit.types import Attachment, HiddenContextItem, ImageAttachment, UserMessageTagContent
+from agents import Message, ResponseInputTextParam, ResponseInputImageParam
+import base64
+
+class MyThreadConverter(ThreadItemConverter):
+    async def attachment_to_message_content(
+        self, attachment: Attachment
+    ) -> ResponseInputContentParam:
+        content = await attachment_store.get_attachment_contents(attachment.id)
+        data_url = "data:%s;base64,%s" % (
+            attachment.mime_type,
+            base64.b64encode(content).decode("utf-8")
+        )
+
+        if isinstance(attachment, ImageAttachment):
+            return ResponseInputImageParam(
+                type="input_image",
+                detail="auto",
+                image_url=data_url,
+            )
+
+        # Handle other attachment types...
+
+    def hidden_context_to_input(self, item: HiddenContextItem) -> Message:
+        return Message(
+            type="message",
+            role="system",
+            content=[
+                ResponseInputTextParam(
+                    type="input_text",
+                    text=f"<HIDDEN_CONTEXT>{item.content}</HIDDEN_CONTEXT>",
+                )
+            ],
+        )
+
+    def tag_to_message_content(self, tag: UserMessageTagContent):
+        tag_context = await retrieve_context_for_tag(tag.id)
+        return ResponseInputTextParam(
+            type="input_text",
+            text=f"<TAG>Name:{tag.data.name}\nType:{tag.data.type}\nDetails:{tag_context}</TAG>"
+        )
+
+        # Handle other @-mentions...
+```
+
+### Widgets
+
+Widgets are rich UI components that can be displayed in chat. You can return a widget either directly from the `respond` method (if you want to do so unconditionally) or from a tool call triggered by the model.
+
+#### Basic Widget Example
+
+Example of a widget returned directly from the `respond` method:
+
+```python
+from chatkit.types import Text
+from chatkit.events import stream_widget
+
+async def respond(
+    self,
+    thread: ThreadMetadata,
+    input: UserMessageItem | None,
+    context: Any,
+) -> AsyncIterator[ThreadStreamEvent]:
+    widget = Text(
+        id="description",
+        value="Text widget",
+    )
+
+    async for event in stream_widget(
+        thread,
+        widget,
+        generate_id=lambda item_type: self.store.generate_item_id(
+            item_type, thread, context
+        ),
+    ):
+        yield event
+```
+
+Example of a widget returned from a tool call:
+
+```python
+from chatkit.types import Text
+from agents import function_tool, RunContextWrapper
+
+@function_tool(description_override="Display a sample widget to the user.")
+async def sample_widget(ctx: RunContextWrapper[AgentContext]) -> None:
+    widget = Text(
+        id="description",
+        value="Text widget",
+    )
+    await ctx.context.stream_widget(widget)
+```
+
+#### Streaming Widgets
+
+You can also stream an updating widget by yielding new versions of the widget from a generator function. The ChatKit framework will send updates for the parts of the widget that have changed.
+
+**Note:** Currently, only `<Text>` and `<Markdown>` components marked with an `id` have their text updates streamed.
+
+Example:
+
+```python
+from chatkit.types import Text, Card, Widget
+from chatkit.agents import accumulate_text
+from agents import Runner, RunContextWrapper, AgentContext
+from typing import AsyncGenerator
+
+async def sample_widget(ctx: RunContextWrapper[AgentContext]) -> None:
+    description_text = Runner.run_streamed(
+        email_generator, "ChatKit is the best thing ever"
+    )
+
+    async def widget_generator() -> AsyncGenerator[Widget, None]:
+        text_widget_updates = accumulate_text(
+            description_text.stream_events(),
+            Text(
+                id="description",
+                value="",
+                streaming=True
+            ),
+        )
+
+        async for text_widget in text_widget_updates:
+            yield Card(
+                children=[text_widget]
+            )
+
+    await ctx.context.stream_widget(widget_generator())
+```
+
+#### Defining Widgets from JSON
+
+You may find it easier to write widgets in JSON. You can parse JSON widgets to `WidgetRoot` instances for your server to stream:
+
+```python
+from chatkit.types import WidgetRoot
+from pydantic import ValidationError
+
+try:
+    widget = WidgetRoot.model_validate_json(WIDGET_JSON_STRING)
+except ValidationError:
+    # handle invalid json
+    pass
+```
+
+For full widget reference, components, props, and examples, see the [ChatKit Widgets Documentation](https://platform.openai.com/docs/chatkit/widgets).
+
+### Thread Metadata
+
+ChatKit provides a way to store arbitrary information associated with a thread. This information is not sent to the UI.
+
+One use case for the metadata is to preserve the [`previous_response_id`](https://platform.openai.com/docs/api-reference/responses/create#responses-create-previous_response_id) and avoid having to re-send all items for an Agent SDK run.
+
+Example usage:
+
+```python
+previous_response_id = thread.metadata.get("previous_response_id")
+
+# Run the Agent SDK run with the previous response id
+result = Runner.run_streamed(
+    agent,
+    input=...,
+    previous_response_id=previous_response_id,
+)
+
+# Save the previous response id for the next run
+thread.metadata["previous_response_id"] = result.response_id
+await self.store.save_thread(thread, context)
+```
+
+### Automatic Thread Titles
+
+ChatKit does not automatically title threads, but you can easily implement your own logic to do so.
+
+First, decide when to trigger the thread title update. A simple approach might be to set the thread title the first time a user sends a message.
+
+Example implementation:
+
+```python
+import asyncio
+from chatkit.agents import simple_to_agent_input
+from agents import Runner, Agent
+
+class MyChatKitServer(ChatKitServer):
+    title_agent = Agent(
+        model="gpt-4",
+        instructions="Generate a short, descriptive title (3-5 words) for this conversation."
+    )
+
+    async def maybe_update_thread_title(
+        self,
+        thread: ThreadMetadata,
+        input_item: UserMessageItem,
+    ) -> None:
+        if thread.title is not None:
+            return
+
+        agent_input = await simple_to_agent_input(input_item)
+        run = await Runner.run(self.title_agent, input=agent_input)
+        thread.title = run.final_output
+        await self.store.save_thread(thread, {})
+
+    async def respond(
+        self,
+        thread: ThreadMetadata,
+        input: UserMessageItem | None,
+        context: Any,
+    ) -> AsyncIterator[ThreadStreamEvent]:
+        if input is not None:
+            asyncio.create_task(self.maybe_update_thread_title(thread, input))
+
+        # Generate the model response
+        ...
+```
+
+### Progress Updates
+
+If your server-side tool takes a while to run, you can use the progress update event to display the progress to the user.
+
+Example:
+
+```python
+from chatkit.types import ProgressUpdateEvent
+from agents import function_tool, RunContextWrapper
+import asyncio
+
+@function_tool()
+async def long_running_tool(ctx: RunContextWrapper[AgentContext]) -> str:
+    await ctx.context.stream(
+        ProgressUpdateEvent(text="Loading a user profile...")
+    )
+
+    await asyncio.sleep(1)
+
+    await ctx.context.stream(
+        ProgressUpdateEvent(text="Processing data...")
+    )
+
+    await asyncio.sleep(1)
+
+    await ctx.context.stream(
+        ProgressUpdateEvent(text="Finalizing results...")
+    )
+
+    return "Task completed!"
+```
+
+The progress update will be automatically replaced by the next assistant message, widget, or another progress update.
+
+### Server Context
+
+Sometimes it's useful to pass additional information (like `userId`) to the ChatKit server implementation. The `ChatKitServer.process` method accepts a `context` parameter that it passes to the `respond` method and all data store and file store methods.
+
+Example usage:
+
+```python
+class MyChatKitServer(ChatKitServer):
+    async def respond(..., context) -> AsyncIterator[ThreadStreamEvent]:
+        # Access context information
+        user_id = context.get("userId")
+        # Use user_id for custom logic...
+
+# When calling process:
+server.process(..., context={"userId": "user_123"})
+```
+
+Server context may be used to implement permission checks in `AttachmentStore` and `Store`:
+
+```python
+class MyChatKitServer(ChatKitServer):
+    async def load_attachment(..., context) -> Attachment:
+        user_id = context.get("userId")
+        # Check if user_id has access to the file
+        if not await self.can_user_access(user_id, attachment_id):
+            raise PermissionError("Access denied")
+        return attachment
+```
+
+In your Django endpoint, you can extract user information from the request and pass it through:
+
+```python
+@csrf_exempt
+async def chatkit_endpoint(request):
+    # Extract user from Django session or authentication
+    user_id = request.user.id if hasattr(request, 'user') and request.user.is_authenticated else None
+
+    server = get_chatkit_server()
+    result = await server.process(
+        request.body,
+        context={"userId": user_id, "request": request}
+    )
+    # ... handle response
+```
 
 ---
 
