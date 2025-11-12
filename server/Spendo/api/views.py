@@ -91,21 +91,58 @@ async def chatkit_endpoint(request):
         
         if isinstance(result, StreamingResult):
             # Collect all items from the async iterator first
-            items = await _collect_streaming_result(result)
-            
-            # Create a synchronous generator from collected items
-            def sync_iterator():
-                for item in items:
-                    yield item
-            
-            # Return streaming response
-            response = StreamingHttpResponse(
-                sync_iterator(),
-                content_type="text/event-stream"
-            )
-            response['Cache-Control'] = 'no-cache'
-            response['X-Accel-Buffering'] = 'no'
-            return response
+            print(f"DEBUG: Processing StreamingResult, type: {type(result)}")
+            try:
+                items = await _collect_streaming_result(result)
+                print(f"DEBUG: Collected {len(items)} items from StreamingResult")
+                
+                # Create a synchronous generator from collected items
+                def sync_iterator():
+                    try:
+                        for idx, item in enumerate(items):
+                            print(f"DEBUG: Yielding item {idx}, type: {type(item)}")
+                            # StreamingResult items should already be in the correct format
+                            # ChatKit SDK handles serialization internally
+                            if isinstance(item, bytes):
+                                yield item
+                            elif isinstance(item, str):
+                                yield item.encode('utf-8')
+                            else:
+                                # If it's a Pydantic model or similar, try to serialize
+                                if hasattr(item, 'model_dump_json'):
+                                    yield item.model_dump_json().encode('utf-8')
+                                elif hasattr(item, 'json'):
+                                    yield item.json().encode('utf-8')
+                                else:
+                                    # Default: yield as-is (ChatKit SDK should handle it)
+                                    yield item
+                    except Exception as yield_error:
+                        print(f"DEBUG: Error in sync_iterator: {yield_error}")
+                        import traceback
+                        print(f"DEBUG: Yield error traceback: {traceback.format_exc()}")
+                        raise
+                
+                # Return streaming response
+                response = StreamingHttpResponse(
+                    sync_iterator(),
+                    content_type="text/event-stream"
+                )
+                response['Cache-Control'] = 'no-cache'
+                response['X-Accel-Buffering'] = 'no'
+                response['Connection'] = 'keep-alive'
+                print("DEBUG: Returning StreamingHttpResponse")
+                return response
+            except Exception as stream_error:
+                print(f"DEBUG: Error processing StreamingResult: {stream_error}")
+                import traceback
+                error_trace = traceback.format_exc()
+                print(f"DEBUG: StreamingResult error traceback: {error_trace}")
+                # Return error as JSON so ChatKit can display it
+                return JsonResponse(
+                    {"error": f"Streaming error: {str(stream_error)}", "traceback": error_trace},
+                    status=500,
+                    safe=False
+                )
         
         if hasattr(result, "json"):
             return JsonResponse(json.loads(result.json), safe=False)

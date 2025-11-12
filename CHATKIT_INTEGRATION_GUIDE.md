@@ -2506,6 +2506,62 @@ After deployment, verify:
 
 - **Solution:** All Django ORM calls are already wrapped with `sync_to_async` in the implementation - this should work correctly on Heroku with gunicorn
 
+**Issue: ChatKit Refreshes Without Showing Response on Heroku**
+
+**Symptom:** ChatKit interface keeps refreshing/loading but no response is displayed on Heroku.
+
+**Debugging Steps:**
+
+1. **Check Heroku logs for errors:**
+
+   ```bash
+   heroku logs --tail
+   ```
+
+   Look for:
+
+   - `DEBUG:` messages showing the flow of execution
+   - Error messages or tracebacks
+   - Database connection errors
+   - Import errors
+
+2. **Verify migrations ran:**
+
+   ```bash
+   heroku run python manage.py migrate
+   ```
+
+   Ensure `chatkit_threads` and `chatkit_user_sessions` tables exist.
+
+3. **Check if endpoint is accessible:**
+
+   ```bash
+   curl https://your-app.herokuapp.com/api/chatkit/
+   ```
+
+   Should return `{"status": "ok"}`
+
+4. **Common Causes:**
+
+   - **Database not migrated:** Run migrations (see above)
+   - **Environment variables missing:** Check `OPENAI_API_KEY` and other required vars with `heroku config`
+   - **Response serialization issue:** Check logs for serialization errors
+   - **CORS issues:** Verify CORS headers are set correctly in `settings.py`
+   - **Streaming format issue:** The `StreamingResult` items need proper serialization
+
+5. **Check logs for these specific messages:**
+   - `DEBUG: Processing StreamingResult` - confirms endpoint is called
+   - `DEBUG: Collected X items` - confirms events are generated
+   - `DEBUG: Yielding item` - confirms items are being sent
+   - Any error messages or tracebacks
+
+**Solution:** Based on the logs, the issue is usually one of:
+
+- Missing database migrations (most common)
+- Missing environment variables
+- Response format not matching ChatKit's expectations
+- Errors in the `respond()` method that aren't being caught
+
 ---
 
 ## Next Steps

@@ -213,10 +213,13 @@ class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
             )
             
             # Stream the response
+            print(f"DEBUG: Yielding ThreadItemDoneEvent with response_text: {response_text[:100]}...")
             yield ThreadItemDoneEvent(item=assistant_item)
+            print(f"DEBUG: Successfully yielded ThreadItemDoneEvent")
             
             # Save the assistant message to thread history
             await self.store.add_thread_item(thread.id, assistant_item, context)
+            print(f"DEBUG: Saved assistant message to thread history")
             
         except Exception as e:
             # Handle errors gracefully
