@@ -22,8 +22,9 @@ This document provides a complete guide for integrating OpenAI's ChatKit SDK int
 8. [Troubleshooting](#troubleshooting)
 9. [Code Reusability Guide](#code-reusability-guide)
 10. [Summary of Files Created/Modified](#summary-of-files-createdmodified)
-11. [Next Steps](#next-steps)
-12. [Additional Resources](#additional-resources)
+11. [Heroku Deployment](#heroku-deployment)
+12. [Next Steps](#next-steps)
+13. [Additional Resources](#additional-resources)
 
 ---
 
@@ -2433,6 +2434,77 @@ async def respond(...):
 - `client/app/package.json` - Added `@openai/chatkit-react`
 - `client/app/index.html` - Added ChatKit script and meta tag
 - `client/app/src/components/chatbot/MyChat.tsx` - Configured ChatKit component
+
+---
+
+## Heroku Deployment
+
+### Prerequisites
+
+1. **Python Version**: Ensure `server/Spendo/.python-version` contains `3.11` (already set up in Step 1)
+2. **Dependencies**: All required packages should be in `requirements.txt` (already added in Step 1)
+3. **Database**: Heroku Postgres addon should be configured
+
+### Deployment Steps
+
+1. **Create and commit migrations locally:**
+
+   ```bash
+   python manage.py makemigrations
+   git add server/Spendo/api/migrations/
+   git commit -m "Add ChatKit user identification models"
+   ```
+
+2. **Deploy to Heroku:**
+
+   ```bash
+   git push heroku main
+   ```
+
+3. **Run migrations on Heroku:**
+
+   ```bash
+   heroku run python manage.py migrate
+   ```
+
+   **Important:** The new `ChatKitThread` and `ChatKitUserSession` models must be migrated on Heroku before the ChatKit integration will work correctly.
+
+### Optional: Automatic Migrations on Deploy
+
+To automatically run migrations on each deploy, add a `release` process to your `Procfile`:
+
+```
+web: gunicorn Spendo.wsgi
+release: python manage.py migrate
+```
+
+**Note:** The `release` process runs before the `web` process starts, ensuring migrations are applied before the app serves requests.
+
+### Verifying Deployment
+
+After deployment, verify:
+
+1. Check Heroku logs: `heroku logs --tail`
+2. Test the ChatKit endpoint: `curl https://your-app.herokuapp.com/api/chatkit/` (should return `{"status": "ok"}`)
+3. Verify database tables exist: `heroku run python manage.py dbshell` then `\dt` to list tables (should see `chatkit_threads` and `chatkit_user_sessions`)
+
+### Troubleshooting Heroku Deployment
+
+**Issue: Models not found**
+
+- **Solution:** Run migrations: `heroku run python manage.py migrate`
+
+**Issue: Python version error**
+
+- **Solution:** Ensure `.python-version` file exists with `3.11` in `server/Spendo/` directory
+
+**Issue: Import errors for `openai-chatkit`**
+
+- **Solution:** Ensure `openai-chatkit>=1.0.2,<2` is in `requirements.txt` and dependencies are installed
+
+**Issue: `SynchronousOnlyOperation` errors**
+
+- **Solution:** All Django ORM calls are already wrapped with `sync_to_async` in the implementation - this should work correctly on Heroku with gunicorn
 
 ---
 
