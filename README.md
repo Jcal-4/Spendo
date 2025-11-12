@@ -18,12 +18,12 @@ To use Docker, you must first install it on your system. Follow the official ins
 2. **Copy `.env.example` files to `.env` and fill in any required values**
 3. **Build and start all services:**
     ```bash
-    docker compose up --build
+    docker compose -f config/docker-compose.yml up --build
     ```
 4. **To run Django management commands inside the backend container:**
     ```bash
-    docker compose exec backend python manage.py makemigrations
-    docker compose exec backend python manage.py migrate
+    docker compose -f config/docker-compose.yml exec backend python manage.py makemigrations
+    docker compose -f config/docker-compose.yml exec backend python manage.py migrate
     ```
 
 ---
@@ -130,4 +130,4 @@ See the `.env.example` files for required variables.
 
 ---
 
-For more details, see `docker_overview.md` in the project root.
+For more details, see `docs/docker_overview.md`.

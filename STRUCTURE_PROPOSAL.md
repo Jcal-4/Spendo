@@ -43,7 +43,7 @@ Spendo/
 │   │   ├── chatkit_server.py
 │   │   ├── memory_store.py
 │   │   │
-│   │   ├── migrations/
+│   │   ├── migrations
 │   │   │   ├── __init__.py
 │   │   │   └── *.py
 │   │   │
@@ -125,7 +125,7 @@ Spendo/
 │   ├── docker-compose.prod.yml      # Production compose file (optional)
 │   ├── supervisord.conf
 │   ├── postgres.env.example
-│   └── .env.example                 # Root level env example
+│   └── .env.example                 # Root level env examplecd
 │
 ├── docker/                           # NEW: Docker deployment files
 │   ├── Dockerfile.prod              # Production Dockerfile (moved from root)
