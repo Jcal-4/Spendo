@@ -2,10 +2,17 @@
 
 This directory contains project documentation.
 
+## Table of Contents
+
+- [Available Documentation](#available-documentation)
+- [Quick Links](#quick-links)
+
+---
+
 ## Available Documentation
 
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide for Heroku and other platforms
-- **[docker_overview.md](docker_overview.md)** - Docker setup and configuration guide
+- **[PROJECT_CREATION_GUIDE.md](PROJECT_CREATION_GUIDE.md)** - Step-by-step guide for creating a new Django + React project
 - **[CHATKIT_INTEGRATION_GUIDE.md](CHATKIT_INTEGRATION_GUIDE.md)** - ChatKit AI integration documentation
 
 ## Quick Links

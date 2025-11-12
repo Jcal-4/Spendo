@@ -2,17 +2,29 @@
 
 This directory contains utility scripts for Heroku deployment and management.
 
+## Table of Contents
+
+- [Available Scripts](#available-scripts)
+  - [`heroku.sh`](#herokush)
+  - [`fix-heroku-buildpacks.sh`](#fix-heroku-buildpackssh)
+- [Adding New Scripts](#adding-new-scripts)
+
+---
+
 ## Available Scripts
 
 ### `heroku.sh`
+
 Heroku deployment and management script. Provides easy commands for common Heroku tasks.
 
 **Usage:**
+
 ```bash
 ./scripts/heroku.sh [command] [app-name]
 ```
 
 **Available Commands:**
+
 - `logs [app]` - View last 100 lines of logs
 - `tail [app]` - View live logs (follow mode, real-time)
 - `logs-tail [app]` - Alias for tail (view live logs)
@@ -30,6 +42,7 @@ Heroku deployment and management script. Provides easy commands for common Herok
 - `restore [app]` - Restore database from backup
 
 **Examples:**
+
 ```bash
 # View live logs (follow mode)
 ./scripts/heroku.sh tail spendo-app
@@ -47,14 +60,17 @@ Heroku deployment and management script. Provides easy commands for common Herok
 **Note:** If you have a Heroku git remote configured, you can omit the app name.
 
 ### `fix-heroku-buildpacks.sh`
+
 Quick script to fix Heroku buildpack configuration by removing problematic monorepo buildpacks and setting up standard buildpacks.
 
 **Usage:**
+
 ```bash
 ./scripts/fix-heroku-buildpacks.sh [app-name]
 ```
 
 **What it does:**
+
 - Clears all buildpacks
 - Removes any monorepo buildpacks
 - Adds `heroku/nodejs` and `heroku/python` buildpacks
@@ -62,6 +78,7 @@ Quick script to fix Heroku buildpack configuration by removing problematic monor
 - Verifies the final buildpack configuration
 
 **When to use:**
+
 - First time setting up Heroku deployment
 - After changing project structure
 - If you get "server/Spendo not found" errors
@@ -69,13 +86,14 @@ Quick script to fix Heroku buildpack configuration by removing problematic monor
 ## Adding New Scripts
 
 Feel free to add more utility scripts here, such as:
+
 - `test.sh` - Test runners
 - `lint.sh` - Linting scripts
 - `backup-db.sh` - Database backup scripts
 - etc.
 
 Make sure to:
+
 1. Add `#!/bin/bash` at the top
 2. Make scripts executable: `chmod +x scripts/your-script.sh`
 3. Update this README with documentation
-

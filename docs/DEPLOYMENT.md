@@ -5,8 +5,25 @@ This guide covers deployment to Heroku and other platforms.
 ## Table of Contents
 
 - [Heroku Deployment](#heroku-deployment)
+  - [Prerequisites](#prerequisites)
+  - [Initial Setup](#initial-setup)
+  - [Buildpack Configuration](#buildpack-configuration)
+  - [Important Files for Heroku](#important-files-for-heroku)
+  - [Environment Variables](#environment-variables)
+  - [Deployment Process](#deployment-process)
+  - [Post-Deployment Steps](#post-deployment-steps)
+  - [How the Build Process Works](#how-the-build-process-works)
+  - [Common Heroku Commands](#common-heroku-commands)
 - [Project Structure for Deployment](#project-structure-for-deployment)
+  - [Root Directory Files (Required for Heroku)](#root-directory-files-required-for-heroku)
+  - [Why Symlinks?](#why-symlinks)
 - [Troubleshooting](#troubleshooting)
+  - [Buildpack Detection Issues](#buildpack-detection-issues)
+  - [Monorepo Buildpack Errors](#monorepo-buildpack-errors)
+  - [Frontend Not Building](#frontend-not-building)
+  - [Database Migration Issues](#database-migration-issues)
+  - [Static Files Not Serving](#static-files-not-serving)
+- [Additional Resources](#additional-resources)
 
 ---
 
@@ -46,18 +63,12 @@ This project uses a **monorepo structure** with both frontend (Node.js) and back
 1. `heroku/nodejs` - For building the frontend
 2. `heroku/python` - For running the Django backend
 
-**Configure buildpacks:**
+**Configure buildpacks (first time only):**
 
 ```bash
 heroku buildpacks:clear -a your-app-name
 heroku buildpacks:add heroku/nodejs -a your-app-name
 heroku buildpacks:add heroku/python -a your-app-name
-```
-
-**Or use the provided script:**
-
-```bash
-./scripts/fix-heroku-buildpacks.sh your-app-name
 ```
 
 ### Important Files for Heroku
@@ -112,41 +123,42 @@ heroku config:set VITE_API_URL=https://your-app.herokuapp.com -a your-app-name
 **Deploy by pushing to Heroku:**
 
 ```bash
-# Ensure buildpacks are configured correctly (first time only)
-heroku buildpacks -a your-app-name
-
 # Push to Heroku (this triggers the build)
 git push heroku main
 # or
 git push heroku master
 ```
 
-**Note:** The `heroku.sh deploy` command is also available if you prefer, but pushing directly to git is simpler.
+That's it! Heroku will automatically:
+
+1. Build the frontend using the Node.js buildpack
+2. Build the backend using the Python buildpack
+3. Run migrations (via the `release` command in Procfile)
+4. Start your app
 
 ### Post-Deployment Steps
 
-1. **Run migrations:**
+Migrations run automatically via the `release` command in your Procfile. If you need to run them manually:
 
-   ```bash
-   ./scripts/heroku.sh migrate your-app-name
-   # or
-   heroku run python manage.py migrate -a your-app-name
-   ```
+```bash
+heroku run python manage.py migrate -a your-app-name
+```
 
-2. **Create superuser (optional):**
+**Other useful commands:**
 
-   ```bash
-   ./scripts/heroku.sh superuser your-app-name
-   # or
-   heroku run python manage.py createsuperuser -a your-app-name
-   ```
+```bash
+# Create superuser
+heroku run python manage.py createsuperuser -a your-app-name
 
-3. **Verify deployment:**
-   ```bash
-   ./scripts/heroku.sh open your-app-name
-   # or
-   heroku open -a your-app-name
-   ```
+# View logs
+heroku logs --tail -a your-app-name
+
+# Open app in browser
+heroku open -a your-app-name
+
+# View environment variables
+heroku config -a your-app-name
+```
 
 ### How the Build Process Works
 
@@ -169,28 +181,26 @@ git push heroku master
    - `Procfile` runs: `cd backend && gunicorn spendo.wsgi`
    - Django serves both API and frontend static files
 
-### Useful Heroku Commands
-
-See `scripts/heroku.sh` for a complete list of commands, or use:
+### Common Heroku Commands
 
 ```bash
-# View logs
-./scripts/heroku.sh tail your-app-name
+# View logs (live)
+heroku logs --tail -a your-app-name
+
+# View last 100 lines
+heroku logs --num 100 -a your-app-name
 
 # Check app status
-./scripts/heroku.sh status your-app-name
-
-# View environment variables
-./scripts/heroku.sh config your-app-name
+heroku ps -a your-app-name
 
 # Restart dynos
-./scripts/heroku.sh restart your-app-name
+heroku restart -a your-app-name
 
 # Open Django shell
-./scripts/heroku.sh console your-app-name
+heroku run python manage.py shell -a your-app-name
 
-# Database backup
-./scripts/heroku.sh backup your-app-name
+# Database backup (if using Heroku Postgres)
+heroku pg:backups:capture -a your-app-name
 ```
 
 ---
@@ -240,8 +250,12 @@ Heroku's Python buildpack requires `requirements.txt` and `.python-version` in t
 
 **Solution:**
 
-- Remove any monorepo buildpacks: `./scripts/fix-heroku-buildpacks.sh your-app-name`
-- Use only standard buildpacks: `heroku/nodejs` and `heroku/python`
+- Remove any monorepo buildpacks:
+  ```bash
+  heroku buildpacks:clear -a your-app-name
+  heroku buildpacks:add heroku/nodejs -a your-app-name
+  heroku buildpacks:add heroku/python -a your-app-name
+  ```
 
 ### Frontend Not Building
 
@@ -251,7 +265,7 @@ Heroku's Python buildpack requires `requirements.txt` and `.python-version` in t
 
 - Check `heroku-postbuild` script in `package.json`
 - Verify paths in the script match your structure
-- Check build logs: `./scripts/heroku.sh logs your-app-name`
+- Check build logs: `heroku logs --tail -a your-app-name`
 
 ### Database Migration Issues
 
@@ -259,7 +273,7 @@ Heroku's Python buildpack requires `requirements.txt` and `.python-version` in t
 
 **Solution:**
 
-- Run migrations manually: `./scripts/heroku.sh migrate your-app-name`
+- Run migrations manually: `heroku run python manage.py migrate -a your-app-name`
 - Check database connection: `heroku config:get DATABASE_URL -a your-app-name`
 - Verify Heroku Postgres addon is attached
 
@@ -281,4 +295,3 @@ Heroku's Python buildpack requires `requirements.txt` and `.python-version` in t
 - [Heroku Python Support](https://devcenter.heroku.com/articles/python-support)
 - [Heroku Node.js Support](https://devcenter.heroku.com/articles/nodejs-support)
 - [Heroku Buildpacks](https://devcenter.heroku.com/articles/buildpacks)
-- [Project Scripts](../scripts/README.md)

@@ -2,6 +2,43 @@
 
 This guide walks you through creating a modern web application using Django (Python) for the backend and React (Vite) for the frontend, organized in a monorepo structure.
 
+## Table of Contents
+
+- [What is Django?](#what-is-django)
+- [Project Folder Layout](#project-folder-layout)
+- [1. Implement React in Frontend](#1-implement-react-in-frontend)
+- [2. Run the React App](#2-run-the-react-app)
+- [3. Implement Django](#3-implement-django)
+- [4. Add Backend Requirements and Procfile](#4-add-backend-requirements-and-procfile)
+- [5. Ensure Required Imports in Django Settings](#5-ensure-required-imports-in-django-settings)
+- [6. Configure Django Settings for CORS and Static Files](#6-configure-django-settings-for-cors-and-static-files)
+- [7. Set Up Docker Configuration](#7-set-up-docker-configuration)
+  - [7.1 Create Configuration Directory](#71-create-configuration-directory)
+  - [7.2 Create Docker Compose File](#72-create-docker-compose-file)
+  - [7.3 Create Frontend Dockerfile](#73-create-frontend-dockerfile)
+  - [7.4 Create Backend Dockerfile](#74-create-backend-dockerfile)
+  - [7.5 Create PostgreSQL Environment File](#75-create-postgresql-environment-file)
+  - [7.6 Using Docker Compose for Local Development](#76-using-docker-compose-for-local-development)
+    - [Starting Docker (WSL Users)](#starting-docker-wsl-users)
+    - [Quick Start](#quick-start)
+    - [Database Persistence with Docker Volumes](#database-persistence-with-docker-volumes)
+- [8. Set Up Root Level Configuration Files](#8-set-up-root-level-configuration-files)
+  - [8.1 Create Root Package.json](#81-create-root-packagejson)
+  - [8.2 Create Root Procfile (for Heroku)](#82-create-root-procfile-for-heroku)
+  - [8.3 Create Heroku Symlinks (Only if deploying to Heroku)](#83-create-heroku-symlinks-only-if-deploying-to-heroku)
+  - [8.4 Create .gitignore](#84-create-gitignore)
+  - [8.5 Create Environment File Examples](#85-create-environment-file-examples)
+- [9. Configure Django URLs for Frontend Serving](#9-configure-django-urls-for-frontend-serving)
+- [10. Database Health Checks](#10-database-health-checks)
+- [11. Complete Project Structure](#11-complete-project-structure)
+- [12. Testing the Setup](#12-testing-the-setup)
+  - [12.1 Test Local Development](#121-test-local-development)
+  - [12.2 Test Backend Locally (without Docker)](#122-test-backend-locally-without-docker)
+  - [12.3 Test Frontend Locally (without Docker)](#123-test-frontend-locally-without-docker)
+- [13. Deployment Preparation](#13-deployment-preparation)
+  - [13.1 Heroku Deployment Setup](#131-heroku-deployment-setup)
+- [14. Next Steps](#14-next-steps)
+
 ---
 
 ## What is Django?
@@ -108,15 +145,23 @@ Django is popular for its simplicity, robustness, and strong community support.
 
 ## 3. Implement Django
 
+**Note:** If you're using Docker (recommended), you don't need to install Django or any Python packages on your local machine. Docker will install everything automatically inside the container. Skip to step 3.
+
+If you want to run Django locally without Docker, you'll need to install dependencies manually (see step 2).
+
 1. **Create the `backend` directory and move into it:**
    ```bash
    mkdir backend
    cd backend
    ```
-2. **Install Django and Django REST Framework:**
+2. **Install Django and Django REST Framework (only if NOT using Docker):**
+
    ```bash
    pip install django djangorestframework
    ```
+
+   **With Docker:** Dependencies are installed automatically when the Docker image is built. No local installation needed.
+
 3. **Start a new Django project:**
    ```bash
    django-admin startproject spendo .
@@ -313,17 +358,12 @@ TEMPLATES = [
 
 ## 7. Set Up Docker Configuration
 
-### 7.1 Create Configuration Directory Structure
+### 7.1 Create Configuration Directory
 
 1. **Create config directory:**
 
    ```bash
    mkdir config
-   ```
-
-2. **Create docker directory:**
-   ```bash
-   mkdir docker
    ```
 
 ### 7.2 Create Docker Compose File
@@ -419,83 +459,7 @@ EXPOSE 8000
 
 **Note:** We no longer need `netcat-openbsd` since we're using Docker Compose health checks instead of a wait-for-it script. If your Dockerfile still has it, you can remove that line.
 
-### 7.5 Create Production Dockerfile (Optional)
-
-Create `docker/Dockerfile.prod`:
-
-```dockerfile
-# Multi-stage Dockerfile for portfolio deployment (frontend + backend)
-
-# 1. Build frontend
-FROM node:20 AS frontend-build
-WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend .
-RUN npm run build
-
-# 2. Build backend
-FROM python:3.12 AS backend-build
-WORKDIR /code
-COPY backend/requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
-COPY backend .
-
-# 3. Final stage: combine and run both
-FROM python:3.12
-WORKDIR /code
-
-# Copy backend
-COPY --from=backend-build /code /code
-
-# Copy frontend build to Django static files
-COPY --from=frontend-build /app/dist /code/spendo/client_dist
-
-# Install Python dependencies in the final image
-COPY backend/requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
-# Install supervisor and gunicorn
-RUN pip install gunicorn supervisor
-
-# Add supervisor config
-COPY config/supervisord.conf /etc/supervisord.conf
-
-EXPOSE 8000 3000
-CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
-```
-
-### 7.6 Create Supervisor Configuration
-
-Create `config/supervisord.conf`:
-
-```ini
-[supervisord]
-nodaemon=true
-
-default_user=root
-
-[program:migrate]
-command=python manage.py migrate
-directory=/code
-autostart=true
-startsecs=0
-priority=1
-
-[program:web]
-command=gunicorn spendo.wsgi:application --bind 0.0.0.0:8000
-directory=/code
-autostart=true
-priority=2
-
-[program:frontend]
-command=python -m http.server 3000
-directory=/code/spendo/client_dist
-autostart=true
-priority=3
-```
-
-### 7.7 Create PostgreSQL Environment File
+### 7.5 Create PostgreSQL Environment File
 
 Create `config/postgres.env`:
 
@@ -512,6 +476,90 @@ POSTGRES_DB=spendo_db
 POSTGRES_USER=spendo_user
 POSTGRES_PASSWORD=spendo_pass
 ```
+
+**Note:** Add `config/postgres.env` to `.gitignore` to avoid committing sensitive credentials.
+
+---
+
+## 7.6 Using Docker Compose for Local Development
+
+**Important:** When using Docker, you don't need to install Python, Django, Node.js, or PostgreSQL on your local machine. Docker installs and runs everything inside containers automatically.
+
+### Starting Docker (WSL Users)
+
+If you're using Ubuntu inside Windows Subsystem for Linux (WSL), you may need to start the Docker daemon manually:
+
+**If you see this error:**
+
+```
+System has not been booted with systemd as init system (PID 1). Can't operate.
+Failed to connect to bus: Host is down
+```
+
+**Solution:**
+
+1. Start the Docker daemon manually in one terminal:
+
+   ```bash
+   sudo dockerd
+   ```
+
+   Leave this terminal open.
+
+2. In a new terminal, you can now run Docker commands:
+   ```bash
+   docker compose -f config/docker-compose.yml up --build
+   ```
+
+**Alternative:** Install Docker Desktop for Windows and enable WSL integration for a more integrated experience (no need to start dockerd manually).
+
+### Quick Start
+
+1. **Build and start all services:**
+
+   ```bash
+   docker compose -f config/docker-compose.yml up --build
+   ```
+
+   This command:
+
+   - Builds Docker images (installs all dependencies automatically inside containers)
+   - Starts frontend, backend, and database containers
+   - All dependencies are installed inside the containers, not on your local machine
+
+2. **Access the application:**
+
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:8000
+   - Django Admin: http://localhost:8000/admin
+
+3. **Run Django management commands inside the backend container:**
+
+   ```bash
+   docker compose -f config/docker-compose.yml exec backend python manage.py makemigrations
+   docker compose -f config/docker-compose.yml exec backend python manage.py migrate
+   docker compose -f config/docker-compose.yml exec backend python manage.py createsuperuser
+   ```
+
+   **Note:** These commands run inside the Docker container where Django is already installed. You don't need Django installed locally.
+
+### Database Persistence with Docker Volumes
+
+**Database data is persisted using Docker volumes.**
+
+The line in `docker-compose.yml`:
+
+```yaml
+- postgres_data:/var/lib/postgresql/data
+```
+
+ensures that all PostgreSQL data is stored in a Docker-managed volume called `postgres_data`.
+
+**Important points:**
+
+- Stopping containers with `docker compose down` does NOT delete your database data
+- Data will be available again when you restart with `docker compose up`
+- To permanently delete the data, use `docker compose down -v` to remove the volume
 
 ---
 
@@ -545,9 +593,9 @@ release: cd backend && python manage.py migrate
 
 ### 8.3 Create Heroku Symlinks (Only if deploying to Heroku)
 
-**Note:** This step is ONLY required if you plan to deploy to Heroku. Skip this if you're not using Heroku.
+**Note:** This step is ONLY required if you plan to deploy to Heroku.
 
-Heroku's Python buildpack looks for `requirements.txt` and `.python-version` in the root directory, but your project has them in `backend/`. Symlinks (symbolic links) create shortcuts in the root that point to the actual files:
+Heroku's Python buildpack looks for `requirements.txt` and `.python-version` in the root directory. Since your project has them in `backend/`, create symlinks:
 
 ```bash
 # From project root
@@ -555,11 +603,7 @@ ln -sf backend/requirements.txt requirements.txt
 ln -sf backend/.python-version .python-version
 ```
 
-**What are symlinks?** They're like shortcuts - the files in the root don't contain the actual content, they just point to the files in `backend/`. When Heroku reads `requirements.txt` in the root, it actually reads `backend/requirements.txt`.
-
 **Important:** These symlinks must be committed to git for Heroku to detect them.
-
-**If you're NOT deploying to Heroku:** You can skip this step entirely.
 
 ### 8.4 Create .gitignore
 
@@ -619,6 +663,14 @@ Create `frontend/.env.example`:
 VITE_API_URL=http://localhost:8000
 ```
 
+**Environment Files Summary:**
+
+- `config/postgres.env` - Database credentials (for Docker Compose)
+- `backend/spendo/.env` - Django settings (SECRET_KEY, DATABASE_URL, etc.)
+- `frontend/.env` - Frontend API URL
+
+**Important:** Always create `.env.example` files with placeholder values and add actual `.env` files to `.gitignore`.
+
 ---
 
 ## 9. Configure Django URLs for Frontend Serving
@@ -649,44 +701,25 @@ urlpatterns += [
 
 ---
 
-## 10. Database Health Checks (Modern Approach)
+## 10. Database Health Checks
 
-**Note:** The wait-for-it script is **not necessary** when using Docker Compose health checks. The `docker-compose.yml` file above uses a modern approach with:
+The `docker-compose.yml` file uses Docker Compose health checks to ensure the database is ready before the backend starts:
 
-1. **Health check on the database service:**
+- The `db` service has a `healthcheck` that verifies PostgreSQL is ready
+- The `backend` service uses `depends_on` with `condition: service_healthy` to wait for the database
 
-   ```yaml
-   healthcheck:
-     test: ['CMD-SHELL', 'pg_isready -U spendo_user -d spendo_db']
-     interval: 5s
-     timeout: 5s
-     retries: 5
-   ```
-
-2. **Conditional dependency in the backend:**
-   ```yaml
-   depends_on:
-     db:
-       condition: service_healthy
-   ```
-
-This ensures the backend only starts after the database is ready to accept connections. This is cleaner and more reliable than using a separate wait-for-it script.
-
-**Benefits of this approach:**
-
-- No need for additional scripts or dependencies
-- Built into Docker Compose (v2.1+)
-- More reliable and easier to maintain
-- Automatically retries until the database is ready
-
-**Alternative (if you prefer wait-for-it script):**
-If you're using an older version of Docker Compose that doesn't support health checks, you can use a wait-for-it script. However, Docker Compose v2.1+ (released in 2021) supports health checks, so this is the recommended approach.
+This ensures the backend only starts after the database is ready to accept connections. No additional scripts are needed.
 
 ---
 
 ## 11. Complete Project Structure
 
 Your final project structure should look like:
+
+**Note:** For Heroku deployment, symlinks exist in the root:
+
+- `requirements.txt` → `backend/requirements.txt`
+- `.python-version` → `backend/.python-version`
 
 ```
 Spendo/
@@ -726,22 +759,13 @@ Spendo/
 │
 ├── config/                     # Configuration files
 │   ├── docker-compose.yml
-│   ├── supervisord.conf
 │   ├── postgres.env
 │   └── postgres.env.example
 │
-├── docker/                     # Docker deployment files
-│   └── Dockerfile.prod
-│
 ├── docs/                       # Documentation
-│   ├── DEPLOYMENT.md
-│   └── docker_overview.md
+│   └── DEPLOYMENT.md
 │
-├── scripts/                    # Utility scripts
-│   ├── setup.sh
-│   ├── deploy.sh
-│   ├── heroku.sh
-│   └── reset-db.sh
+├── scripts/                    # Optional utility scripts (not required)
 │
 ├── Procfile                    # Root Procfile (for Heroku)
 ├── package.json                # Root package.json (for heroku-postbuild)
@@ -816,32 +840,26 @@ Spendo/
 
 ### 13.1 Heroku Deployment Setup
 
-**Note:** The following steps are ONLY needed for Heroku deployment. If you're deploying elsewhere (AWS, DigitalOcean, etc.), you won't need these symlinks.
-
 1. **Create symlinks (required for Heroku):**
 
-   Heroku's Python buildpack looks for `requirements.txt` and `.python-version` in the root directory. Since your project has them in `backend/`, create symlinks:
-
    ```bash
-   # From project root
    ln -sf backend/requirements.txt requirements.txt
    ln -sf backend/.python-version .python-version
-   ```
-
-   **What are symlinks?** They're shortcuts that point to another file. When Heroku reads `requirements.txt` in the root, it actually reads `backend/requirements.txt`.
-
-2. **Commit symlinks to git:**
-
-   ```bash
    git add requirements.txt .python-version
    git commit -m "Add Heroku symlinks"
    ```
 
-3. **Configure Heroku buildpacks:**
+2. **Configure buildpacks (first time only):**
+
    ```bash
    heroku buildpacks:clear -a your-app-name
    heroku buildpacks:add heroku/nodejs -a your-app-name
    heroku buildpacks:add heroku/python -a your-app-name
+   ```
+
+3. **Deploy:**
+   ```bash
+   git push heroku main
    ```
 
 See `docs/DEPLOYMENT.md` for complete Heroku deployment instructions.

@@ -2,6 +2,16 @@
 
 This guide explains how to set up your local development environment using Docker and Docker Compose.
 
+## Table of Contents
+
+- [Installing Docker](#-installing-docker)
+- [Quick Start: Using Docker Compose for Local Development](#-quick-start-using-docker-compose-for-local-development)
+- [Project Structure](#project-structure)
+- [Environment Files](#environment-files)
+- [Database Persistence with Docker Volumes](#-database-persistence-with-docker-volumes)
+- [Deployment](#-deployment)
+  - [Heroku Deployment](#heroku-deployment)
+
 ---
 
 ## 🐳 Installing Docker
@@ -40,8 +50,7 @@ Spendo/
 ├── config/            # Configuration files
 │   ├── docker-compose.yml
 │   └── postgres.env
-├── docs/              # Documentation
-└── scripts/           # Utility scripts
+└── docs/              # Documentation
 ```
 
 **Note:** For Heroku deployment, symlinks exist in the root:
@@ -86,16 +95,17 @@ For detailed Heroku deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLO
 
 ```bash
 # Configure buildpacks (first time only)
-./scripts/fix-heroku-buildpacks.sh your-app-name
+heroku buildpacks:clear -a your-app-name
+heroku buildpacks:add heroku/nodejs -a your-app-name
+heroku buildpacks:add heroku/python -a your-app-name
 
 # Deploy (push to Heroku)
 git push heroku main
 # or
 git push heroku master
-
-# Run migrations
-./scripts/heroku.sh migrate your-app-name
 ```
+
+Migrations run automatically via the `release` command in your Procfile.
 
 **Important:** This project uses symlinks in the root directory (`requirements.txt` and `.python-version`) that point to `backend/` for Heroku buildpack detection. These must be committed to git.
 
