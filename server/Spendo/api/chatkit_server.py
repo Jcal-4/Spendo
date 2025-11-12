@@ -117,15 +117,6 @@ class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
             except Exception as e:
                 print(f"DEBUG: Error getting active user session: {e}")
             
-            # Fallback: try to get from request (if cookies work)
-            if not user_id:
-                request = context.get("request")
-                if request:
-                    # Try authenticated user
-                    if hasattr(request, 'user') and request.user.is_authenticated:
-                        user_id = request.user.id
-                        print(f"DEBUG: user_id from request.user: {user_id}")
-            
             # If we found a user_id, store it in database and thread metadata
             if user_id:
                 try:

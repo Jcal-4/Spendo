@@ -762,7 +762,8 @@ class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
         # 1. Database lookup (thread_id -> user_id mapping) - persistent
         # 2. Thread metadata (stored from previous requests) - in-memory
         # 3. Active user sessions (created on login) - for new threads
-        # 4. Request authentication (if cookies work) - fallback
+        # Note: We don't use request.user as a fallback because ChatKit doesn't send cookies,
+        # so request.user won't be authenticated in ChatKit requests
         user_id = None
 
         # First try to get user ID from database (persistent storage)
@@ -803,22 +804,10 @@ class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
                     return None
 
                 user_id = await get_active_user()
+                if user_id:
+                    print(f"DEBUG: user_id from active ChatKit session: {user_id}")
             except Exception as e:
                 print(f"DEBUG: Error getting active user session: {e}")
-
-            # Fallback: try to get from request (if cookies work)
-            # Note: This may not work reliably in async contexts if request.user triggers a database query
-            # It's included as a last resort fallback, but the database-backed approach above should handle most cases
-            if not user_id:
-                request = context.get("request")
-                if request and hasattr(request, 'user') and request.user.is_authenticated:
-                    # Accessing request.user can trigger database queries, but it's often cached
-                    # If this causes SynchronousOnlyOperation errors, remove this fallback
-                    try:
-                        user_id = request.user.id
-                    except Exception as e:
-                        print(f"DEBUG: Error accessing request.user: {e}")
-                        user_id = None
 
             # If we found a user_id, store it in database and thread metadata
             if user_id:
@@ -947,7 +936,7 @@ def get_chatkit_server() -> SpendoChatKitServer:
   1. Check database for existing thread-to-user mapping (persistent)
   2. Check thread metadata (in-memory cache)
   3. Check active user sessions (works for single-user scenarios)
-  4. Fallback to request authentication
+  - **Note:** We don't use `request.user` as a fallback because ChatKit doesn't send cookies, so `request.user` won't be authenticated in ChatKit requests
 - **Persistence**: Once a user is identified, store the mapping in both database and thread metadata
 - **Single-User Limitation**: The active session approach works best when only one user is logged in. For production with multiple concurrent users, consider adding IP address matching or other heuristics
 
@@ -957,6 +946,7 @@ def get_chatkit_server() -> SpendoChatKitServer:
 - The `ChatKitUserSession` model tracks who is currently logged in
 - The `ChatKitThread` model stores persistent thread-to-user mappings
 - User data is merged into the message text before sending to the AI, so the AI has context
+- **Removed Code:** The `request.user` fallback has been removed from the implementation because ChatKit doesn't send cookies, so `request.user` won't be authenticated in ChatKit requests. The database-backed approach (ChatKitThread + ChatKitUserSession) is sufficient.
 
 ### Step 4: Add ChatKit Endpoint (`views.py`)
 
@@ -1028,7 +1018,11 @@ async def chatkit_endpoint(request):
         # 3. ChatKit doesn't send cookies anyway, so sessions won't work
         # User identification happens in chatkit_server.py using database models
 
-        result = await server.process(payload, {"request": request})
+        # Pass request in context (user identification happens in chatkit_server.py)
+        context = {
+            "request": request,
+        }
+        result = await server.process(payload, context)
 
         if isinstance(result, StreamingResult):
             # Collect all items from the async iterator first
@@ -1978,7 +1972,7 @@ class MyChatKitServer(ChatKitServer):
         return attachment
 ```
 
-**Important:** For user identification in ChatKit, use the database-based approach (see Step 3.5) rather than relying on context, as ChatKit requests don't include authentication cookies.
+**Important:** For user identification in ChatKit, use the database-based approach (see Step 3.5) rather than relying on context or `request.user`, as ChatKit requests don't include authentication cookies. The `request.user` fallback has been removed because it doesn't work with ChatKit requests.
 
 ---
 
@@ -2532,7 +2526,7 @@ After deployment, verify:
 **Fix:**
 
 - **For sessions:** Never access `request.session` in async endpoints. Use the database-backed approach (ChatKitThread/ChatKitUserSession) instead.
-- **For request.user:** Wrap with `sync_to_async` if needed, or rely on the database-backed approach which is more reliable.
+- **For request.user:** Don't use `request.user` in ChatKit endpoints - ChatKit doesn't send cookies, so `request.user` won't be authenticated. Use the database-backed approach (ChatKitThread/ChatKitUserSession) instead.
 - **For ORM calls:** Always wrap with `sync_to_async` when called from async methods.
 
 **Issue: `AssertionError: Hop-by-hop header, 'Connection: keep-alive', not allowed`**

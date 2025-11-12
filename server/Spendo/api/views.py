@@ -13,12 +13,10 @@ from .services.user_service import (
     create_user,
     get_accounts_by_userid,
 )
-# from .services.OpenAI_service import analyze_user_message
 from django.views.generic import View
 from django.http import FileResponse, StreamingHttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 import json
 import os
 import asyncio
@@ -26,8 +24,6 @@ from openai import OpenAI
 from .chatkit_server import get_chatkit_server
 from chatkit.server import StreamingResult
 
-# Store mapping of ChatKit username to Django user ID in database
-# We'll use the ChatKitThread model to store this persistently
 
 
 async def _collect_streaming_result(streaming_result):
@@ -193,26 +189,12 @@ def create_chatkit_session(request):
     data = {
         "workflow": {"id": workflow_id},
         "user": chatkit_user_id
-        # Add other required parameters here
     }
     response = requests.post(url, headers=headers, json=data)
     print("response: ", response)
     if response.status_code == 200:
         response_data = response.json()
         client_secret = response_data.get("client_secret")
-        
-        # Store mapping of ChatKit username to Django user ID in database
-        # This will be used to identify users when ChatKit makes requests
-        if chatkit_user_id and django_user_id:
-            try:
-                from .models import CustomUser, ChatKitThread
-                user = CustomUser.objects.get(pk=django_user_id)
-                # Store username -> user mapping (we'll use this when we can get the username from requests)
-                # For now, we'll rely on thread_id lookups in chatkit_server.py
-                print(f"DEBUG: Created ChatKit session for username {chatkit_user_id} -> Django user ID {django_user_id}")
-            except Exception as e:
-                print(f"DEBUG: Error storing user mapping: {e}")
-        
         return Response({"client_secret": client_secret})
     else:
         print("ChatKit session creation error:", response.text)
