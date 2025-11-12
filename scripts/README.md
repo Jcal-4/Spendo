@@ -1,38 +1,8 @@
 # Scripts Directory
 
-This directory contains utility scripts to help with development and deployment.
+This directory contains utility scripts for Heroku deployment and management.
 
 ## Available Scripts
-
-### `setup.sh`
-Setup script for new developers. This script:
-- Checks for required tools (Docker, Node.js, Python)
-- Sets up environment files from examples
-- Optionally installs dependencies
-- Provides next steps for getting started
-
-**Usage:**
-```bash
-./scripts/setup.sh
-```
-
-### `deploy.sh`
-Deployment script for building production Docker images.
-
-**Usage:**
-```bash
-./scripts/deploy.sh
-```
-
-### `reset-db.sh`
-Database reset script that drops and recreates the database, then runs migrations.
-
-**Usage:**
-```bash
-./scripts/reset-db.sh
-```
-
-**Warning:** This will delete all database data!
 
 ### `heroku.sh`
 Heroku deployment and management script. Provides easy commands for common Heroku tasks.
@@ -43,7 +13,6 @@ Heroku deployment and management script. Provides easy commands for common Herok
 ```
 
 **Available Commands:**
-- `deploy [app]` - Deploy to Heroku (builds and pushes)
 - `logs [app]` - View last 100 lines of logs
 - `tail [app]` - View live logs (follow mode, real-time)
 - `logs-tail [app]` - Alias for tail (view live logs)
@@ -62,9 +31,6 @@ Heroku deployment and management script. Provides easy commands for common Herok
 
 **Examples:**
 ```bash
-# Deploy to Heroku
-./scripts/heroku.sh deploy spendo-app
-
 # View live logs (follow mode)
 ./scripts/heroku.sh tail spendo-app
 
@@ -79,6 +45,26 @@ Heroku deployment and management script. Provides easy commands for common Herok
 ```
 
 **Note:** If you have a Heroku git remote configured, you can omit the app name.
+
+### `fix-heroku-buildpacks.sh`
+Quick script to fix Heroku buildpack configuration by removing problematic monorepo buildpacks and setting up standard buildpacks.
+
+**Usage:**
+```bash
+./scripts/fix-heroku-buildpacks.sh [app-name]
+```
+
+**What it does:**
+- Clears all buildpacks
+- Removes any monorepo buildpacks
+- Adds `heroku/nodejs` and `heroku/python` buildpacks
+- Removes `BUILD_SUBDIR` config if it exists
+- Verifies the final buildpack configuration
+
+**When to use:**
+- First time setting up Heroku deployment
+- After changing project structure
+- If you get "server/Spendo not found" errors
 
 ## Adding New Scripts
 

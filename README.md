@@ -17,99 +17,45 @@ To use Docker, you must first install it on your system. Follow the official ins
 1. **Clone the repository**
 2. **Copy `.env.example` files to `.env` and fill in any required values**
 3. **Build and start all services:**
-    ```bash
-    docker compose -f config/docker-compose.yml up --build
-    ```
+   ```bash
+   docker compose -f config/docker-compose.yml up --build
+   ```
 4. **To run Django management commands inside the backend container:**
-    ```bash
-    docker compose -f config/docker-compose.yml exec backend python manage.py makemigrations
-    docker compose -f config/docker-compose.yml exec backend python manage.py migrate
-    ```
+   ```bash
+   docker compose -f config/docker-compose.yml exec backend python manage.py makemigrations
+   docker compose -f config/docker-compose.yml exec backend python manage.py migrate
+   ```
 
 ---
 
-## Example docker-compose.yml
+## Project Structure
 
-```yaml
-services:
-    frontend:
-        build:
-            context: ./client/app
-        working_dir: /app
-        ports:
-            - '5173:5173'
-        environment:
-            - NODE_ENV=development
-        volumes:
-            - ./client/app:/app
-        command: ['npm', 'run', 'dev', '--', '--host']
+This project uses a monorepo structure:
 
-    backend:
-        build:
-            context: ./server/Spendo
-        working_dir: /code
-        ports:
-            - '8000:8000'
-        volumes:
-            - ./server/Spendo:/code
-        env_file:
-            - ./server/Spendo/Spendo/.env
-        depends_on:
-            - db
-        command:
-            [
-                'sh',
-                '-c',
-                'chmod +x /wait-for-it.sh && /wait-for-it.sh db 5432 python manage.py migrate && python manage.py generate_fake_data && python manage.py runserver 0.0.0.0:8000',
-            ]
-
-    db:
-        image: postgres:16
-        restart: always
-        env_file:
-            - ./postgres.env
-        ports:
-            - '5432:5432'
-        volumes:
-            - postgres_data:/var/lib/postgresql/data
-
-volumes:
-    postgres_data:
+```
+Spendo/
+├── frontend/          # React frontend (Vite)
+├── backend/           # Django backend
+│   └── spendo/        # Django project
+├── config/            # Configuration files
+│   ├── docker-compose.yml
+│   └── postgres.env
+├── docs/              # Documentation
+└── scripts/           # Utility scripts
 ```
 
----
+**Note:** For Heroku deployment, symlinks exist in the root:
 
-## Example Dockerfiles
-
-### Frontend (`client/app/Dockerfile`)
-
-```dockerfile
-FROM node:20
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-CMD ["npm", "run", "dev", "--", "--host"]
-```
-
-### Backend (`server/Spendo/Dockerfile`)
-
-```dockerfile
-FROM python:3.12
-WORKDIR /code
-COPY requirements.txt ./
-RUN pip install --upgrade pip && pip install -r requirements.txt
-COPY . .
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-```
+- `requirements.txt` → `backend/requirements.txt`
+- `.python-version` → `backend/.python-version`
 
 ---
 
 ## Environment Files
 
-- `postgres.env` (for the database)
-- `server/Spendo/Spendo/.env` (for Django backend)
-- `client/app/.env` (for frontend)
+- `config/postgres.env` (for the database)
+- `backend/spendo/.env` (for Django backend)
+- `frontend/.env` (for frontend)
 
 See the `.env.example` files for required variables.
 
@@ -119,15 +65,42 @@ See the `.env.example` files for required variables.
 
 - **Database data is persisted using Docker volumes.**
 - The line:
-    ```yaml
-    - postgres_data:/var/lib/postgresql/data
-    ```
-    in the `db` service ensures that all PostgreSQL data is stored in a Docker-managed volume called `postgres_data`.
+  ```yaml
+  - postgres_data:/var/lib/postgresql/data
+  ```
+  in the `db` service ensures that all PostgreSQL data is stored in a Docker-managed volume called `postgres_data`.
 - **Data in Docker volumes is persistent:**
-    - Stopping or removing containers with `docker compose down` does NOT delete your database data.
-    - Data will be available again when you restart your containers with `docker compose up`.
-    - To permanently delete the data, use `docker compose down -v` to remove the volume as well.
+  - Stopping or removing containers with `docker compose down` does NOT delete your database data.
+  - Data will be available again when you restart your containers with `docker compose up`.
+  - To permanently delete the data, use `docker compose down -v` to remove the volume as well.
 
 ---
 
-For more details, see `docs/docker_overview.md`.
+## 🚀 Deployment
+
+### Heroku Deployment
+
+For detailed Heroku deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+**Quick deploy:**
+
+```bash
+# Configure buildpacks (first time only)
+./scripts/fix-heroku-buildpacks.sh your-app-name
+
+# Deploy (push to Heroku)
+git push heroku main
+# or
+git push heroku master
+
+# Run migrations
+./scripts/heroku.sh migrate your-app-name
+```
+
+**Important:** This project uses symlinks in the root directory (`requirements.txt` and `.python-version`) that point to `backend/` for Heroku buildpack detection. These must be committed to git.
+
+---
+
+For more details, see:
+
+- `docs/DEPLOYMENT.md` - Deployment guide
