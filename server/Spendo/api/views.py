@@ -75,17 +75,14 @@ async def chatkit_endpoint(request):
         if not payload:
             return JsonResponse({"error": "Empty payload"}, status=400)
         
-        # Try to get user_id from Django session (set when getClientSecret was called)
-        django_user_id = None
-        if hasattr(request, 'session'):
-            django_user_id = request.session.get('chatkit_user_id')
-            if django_user_id:
-                print(f"DEBUG: Got user_id from session: {django_user_id}")
+        # Note: We don't access request.session here because:
+        # 1. It requires sync_to_async (sessions use database queries)
+        # 2. We use database-backed user identification instead (ChatKitThread/ChatKitUserSession)
+        # 3. ChatKit doesn't send cookies anyway, so sessions won't work
         
-        # Pass user information in context
+        # Pass request in context (user identification happens in chatkit_server.py)
         context = {
             "request": request,
-            "user_id": django_user_id,
         }
         result = await server.process(payload, context)
         
