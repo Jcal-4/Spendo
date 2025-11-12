@@ -26,6 +26,9 @@ from openai import OpenAI
 from .chatkit_server import get_chatkit_server
 from chatkit.server import StreamingResult
 
+# Store mapping of ChatKit username to Django user ID in database
+# We'll use the ChatKitThread model to store this persistently
+
 
 async def _collect_streaming_result(streaming_result):
     """Collect all items from a StreamingResult async iterator."""
@@ -72,7 +75,19 @@ async def chatkit_endpoint(request):
         if not payload:
             return JsonResponse({"error": "Empty payload"}, status=400)
         
-        result = await server.process(payload, {"request": request})
+        # Try to get user_id from Django session (set when getClientSecret was called)
+        django_user_id = None
+        if hasattr(request, 'session'):
+            django_user_id = request.session.get('chatkit_user_id')
+            if django_user_id:
+                print(f"DEBUG: Got user_id from session: {django_user_id}")
+        
+        # Pass user information in context
+        context = {
+            "request": request,
+            "user_id": django_user_id,
+        }
+        result = await server.process(payload, context)
         
         if isinstance(result, StreamingResult):
             # Collect all items from the async iterator first
@@ -119,22 +134,49 @@ def create_chatkit_session(request):
         "Content-Type": "application/json",
         "OpenAI-Beta": "chatkit_beta=v1",
     }
-    # Use authenticated user's username if available, otherwise use a placeholder
-    user_id = None
-    if request.user and request.user.is_authenticated:
-        user_id = request.user.username
+    
+    # Get user ID from request body (passed from frontend) or from authenticated user
+    user_id_from_body = request.data.get("user_id") if hasattr(request, 'data') else None
+    django_user_id = None
+    
+    if user_id_from_body:
+        # Look up user by ID to get username
+        try:
+            from .models import CustomUser
+            user = CustomUser.objects.get(pk=user_id_from_body)
+            chatkit_user_id = user.username
+            django_user_id = user_id_from_body
+        except CustomUser.DoesNotExist:
+            chatkit_user_id = "anonymous"
+    elif request.user and request.user.is_authenticated:
+        chatkit_user_id = request.user.username
+        django_user_id = request.user.id
     else:
-        user_id = "anonymous"
+        chatkit_user_id = "anonymous"
 
     data = {
         "workflow": {"id": workflow_id},
-        "user": user_id
+        "user": chatkit_user_id
         # Add other required parameters here
     }
     response = requests.post(url, headers=headers, json=data)
     print("response: ", response)
     if response.status_code == 200:
-        client_secret = response.json().get("client_secret")
+        response_data = response.json()
+        client_secret = response_data.get("client_secret")
+        
+        # Store mapping of ChatKit username to Django user ID in database
+        # This will be used to identify users when ChatKit makes requests
+        if chatkit_user_id and django_user_id:
+            try:
+                from .models import CustomUser, ChatKitThread
+                user = CustomUser.objects.get(pk=django_user_id)
+                # Store username -> user mapping (we'll use this when we can get the username from requests)
+                # For now, we'll rely on thread_id lookups in chatkit_server.py
+                print(f"DEBUG: Created ChatKit session for username {chatkit_user_id} -> Django user ID {django_user_id}")
+            except Exception as e:
+                print(f"DEBUG: Error storing user mapping: {e}")
+        
         return Response({"client_secret": client_secret})
     else:
         print("ChatKit session creation error:", response.text)
@@ -240,6 +282,16 @@ class LoginView(APIView):
         print(user)
         if user is not None:
             login(request, user)
+            # Store user session for ChatKit
+            try:
+                from .models import ChatKitUserSession
+                ChatKitUserSession.objects.update_or_create(
+                    user=user,
+                    defaults={}  # Just update the updated_at timestamp
+                )
+                print(f"DEBUG: Stored ChatKit session for user {user.id}")
+            except Exception as e:
+                print(f"DEBUG: Error storing ChatKit session: {e}")
             return Response({"detail": "Logged in"})
         return Response(
             {"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
@@ -248,5 +300,13 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     def post(self, request):
+        # Delete ChatKit session before logging out
+        if request.user.is_authenticated:
+            try:
+                from .models import ChatKitUserSession
+                ChatKitUserSession.objects.filter(user=request.user).delete()
+                print(f"DEBUG: Deleted ChatKit session for user {request.user.id}")
+            except Exception as e:
+                print(f"DEBUG: Error deleting ChatKit session: {e}")
         logout(request)
         return Response({"detail": "Logged out"})

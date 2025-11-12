@@ -88,6 +88,8 @@ CORS_ALLOW_HEADERS = [
     'chatkit-frame-instance-id',
     'chatkit-session-id',
     'chatkit-user-id',
+    # Custom headers for user identification
+    'x-user-id',
 ]
 
 CSRF_TRUSTED_ORIGINS = [

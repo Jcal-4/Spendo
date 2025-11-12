@@ -9,7 +9,8 @@ This document provides a complete guide for integrating OpenAI's ChatKit SDK int
 3. [Backend Setup](#backend-setup)
 4. [Frontend Setup](#frontend-setup)
 5. [Configuration Details](#configuration-details)
-6. [Advanced Features](#advanced-features)
+6. [User Identification and Context Integration](#user-identification-and-context-integration)
+7. [Advanced Features](#advanced-features)
    - [Attachment Store](#attachment-store)
    - [Client Tools Usage](#client-tools-usage)
    - [Agents SDK Integration](#agents-sdk-integration)
@@ -18,11 +19,11 @@ This document provides a complete guide for integrating OpenAI's ChatKit SDK int
    - [Automatic Thread Titles](#automatic-thread-titles)
    - [Progress Updates](#progress-updates)
    - [Server Context](#server-context)
-7. [Troubleshooting](#troubleshooting)
-8. [Code Reusability Guide](#code-reusability-guide)
-9. [Summary of Files Created/Modified](#summary-of-files-createdmodified)
-10. [Next Steps](#next-steps)
-11. [Additional Resources](#additional-resources)
+8. [Troubleshooting](#troubleshooting)
+9. [Code Reusability Guide](#code-reusability-guide)
+10. [Summary of Files Created/Modified](#summary-of-files-createdmodified)
+11. [Next Steps](#next-steps)
+12. [Additional Resources](#additional-resources)
 
 ---
 
@@ -58,6 +59,7 @@ The ChatKit SDK enables a custom backend integration where all chat requests are
 - React frontend with Vite
 - OpenAI API key with ChatKit access
 - Domain verification key from OpenAI (for production)
+- **Python 3.11 or higher** (required for `openai-chatkit>=1.0.2` which uses `assert_never` from `typing` module)
 
 ---
 
@@ -98,6 +100,27 @@ venv\Scripts\activate  # Windows
 # Then install
 pip install openai-chatkit>=1.0.2,<2
 ```
+
+**Important: Python Version Requirement**
+
+The `openai-chatkit>=1.0.2` package requires **Python 3.11 or higher** because it uses `assert_never` from the `typing` module, which was added in Python 3.11.
+
+**For Heroku Deployment:**
+
+Create a `.python-version` file in `server/Spendo/` directory:
+
+```bash
+# Create .python-version file
+echo "3.11" > server/Spendo/.python-version
+```
+
+Or manually create `server/Spendo/.python-version` with:
+
+```
+3.11
+```
+
+**Note:** Heroku deprecated `runtime.txt` in favor of `.python-version`. The `.python-version` file should contain only the major version (e.g., `3.11`) to allow automatic security updates.
 
 ### Step 2: Create Memory Store (`memory_store.py`)
 
@@ -197,6 +220,21 @@ class SimpleMemoryStore:
     async def save_thread(
         self, thread: ThreadMetadata, context: dict[str, Any]
     ) -> None:
+        # Store user ID in thread metadata if available in context and not already set
+        # This helps with user identification when ChatKit doesn't send cookies
+        if not hasattr(thread, 'metadata') or thread.metadata is None:
+            thread.metadata = {}
+        elif not isinstance(thread.metadata, dict):
+            # If metadata is not a dict, convert it
+            thread.metadata = dict(thread.metadata) if hasattr(thread.metadata, '__dict__') else {}
+
+        # Get user ID from context if available
+        request = context.get("request") if context else None
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            user_id = request.user.id
+            if 'user_id' not in thread.metadata:
+                thread.metadata['user_id'] = user_id
+
         self._threads[thread.id] = thread
 
     async def load_thread_items(
@@ -496,8 +534,18 @@ class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
             workflow_input = WorkflowInput(input_as_text=user_text)
             result = await run_workflow(workflow_input)
 
-            # Extract the response text
-            response_text = result.get("tentativeresponseee", "I'm sorry, I couldn't generate a response.")
+            # Extract the response text - handle different return formats
+            if isinstance(result, dict):
+                # Check if result has tentativeresponse directly
+                if "tentativeresponse" in result:
+                    response_text = result["tentativeresponse"]
+                # Check if result has output_parsed (from financial_reasoning_result)
+                elif "output_parsed" in result and isinstance(result["output_parsed"], dict):
+                    response_text = result["output_parsed"].get("tentativeresponse", "I'm sorry, I couldn't generate a response.")
+                else:
+                    response_text = "I'm sorry, I couldn't generate a response."
+            else:
+                response_text = "I'm sorry, I couldn't generate a response."
 
             # Create assistant message item
             assistant_item = AssistantMessageItem(
@@ -559,6 +607,350 @@ def get_chatkit_server() -> SpendoChatKitServer:
 - Integrates with your existing `run_workflow` function
 - Uses singleton pattern to maintain server instance
 
+**Note:** This is a basic implementation. If you need to identify users and include user-specific data (like financial balances), see **Step 3.5** below for the complete implementation with user identification.
+
+### Step 3.5: User Identification and Context Integration (Optional but Recommended)
+
+**Problem:** ChatKit doesn't send user information (cookies, user ID, etc.) with its requests, making it difficult to identify which user is making a request. This section shows how to integrate user-specific data (like financial balances) into ChatKit responses.
+
+**Solution:** Use a combination of database models to track active user sessions and thread-to-user mappings.
+
+#### Step 3.5.1: Create Database Models
+
+Add the following models to `server/Spendo/api/models.py`:
+
+```python
+class ChatKitThread(models.Model):
+    """Store mapping of ChatKit thread_id to Django user_id for persistent user identification."""
+    thread_id = models.CharField(max_length=255, unique=True, primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='chatkit_threads')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'chatkit_threads'
+        indexes = [
+            models.Index(fields=['thread_id']),
+            models.Index(fields=['user']),
+        ]
+
+class ChatKitUserSession(models.Model):
+    """Store active user sessions for ChatKit - created on login, deleted on logout."""
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='chatkit_session')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'chatkit_user_sessions'
+        indexes = [
+            models.Index(fields=['user']),
+        ]
+```
+
+**Run migrations:**
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+#### Step 3.5.2: Update Login/Logout Views
+
+Modify your login and logout views in `server/Spendo/api/views.py` to track active sessions:
+
+```python
+class LoginView(APIView):
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            # Store user session for ChatKit
+            try:
+                from .models import ChatKitUserSession
+                ChatKitUserSession.objects.update_or_create(
+                    user=user,
+                    defaults={}  # Just update the updated_at timestamp
+                )
+            except Exception as e:
+                print(f"DEBUG: Error storing ChatKit session: {e}")
+            return Response({"detail": "Logged in"})
+        return Response(
+            {"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+        )
+
+class LogoutView(APIView):
+    def post(self, request):
+        # Delete ChatKit session before logging out
+        if request.user.is_authenticated:
+            try:
+                from .models import ChatKitUserSession
+                ChatKitUserSession.objects.filter(user=request.user).delete()
+            except Exception as e:
+                print(f"DEBUG: Error deleting ChatKit session: {e}")
+        logout(request)
+        return Response({"detail": "Logged out"})
+```
+
+#### Step 3.5.3: Update ChatKit Server with User Context
+
+Update `server/Spendo/api/chatkit_server.py` to identify users and fetch user-specific data:
+
+```python
+"""ChatKit server integration for Spendo backend."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, AsyncIterator
+from asgiref.sync import sync_to_async  # Required for async Django ORM calls
+
+from chatkit.server import ChatKitServer
+from chatkit.types import (
+    AssistantMessageItem,
+    ThreadItem,
+    ThreadItemDoneEvent,
+    ThreadMetadata,
+    ThreadStreamEvent,
+    UserMessageItem,
+)
+
+from .memory_store import SimpleMemoryStore, _gen_id
+from .services.OpenAI_service import run_workflow, WorkflowInput
+from .services.user_service import get_accounts_by_userid  # Your user data service
+
+
+def _user_message_text(item: UserMessageItem) -> str:
+    """Extract text content from a UserMessageItem."""
+    parts: list[str] = []
+    for part in item.content:
+        text = getattr(part, "text", None)
+        if text:
+            parts.append(text)
+    return " ".join(parts).strip()
+
+
+class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
+    """ChatKit server wired up with the Spendo financial reasoning workflow."""
+
+    def __init__(self) -> None:
+        self.store = SimpleMemoryStore()
+        super().__init__(self.store)
+
+    async def respond(
+        self,
+        thread: ThreadMetadata,
+        input: ThreadItem | None,
+        context: dict[str, Any],
+    ) -> AsyncIterator[ThreadStreamEvent]:
+        """Handle user messages and generate assistant responses using the existing workflow."""
+        if input is None:
+            return
+
+        if not isinstance(input, UserMessageItem):
+            return
+
+        # Extract user message text
+        user_text = _user_message_text(input)
+        if not user_text:
+            return
+
+        # ========================================
+        # USER IDENTIFICATION SECTION
+        # ========================================
+        # ChatKit doesn't send user information with requests, so we rely on:
+        # 1. Database lookup (thread_id -> user_id mapping) - persistent
+        # 2. Thread metadata (stored from previous requests) - in-memory
+        # 3. Active user sessions (created on login) - for new threads
+        # 4. Request authentication (if cookies work) - fallback
+        user_id = None
+
+        # First try to get user ID from database (persistent storage)
+        try:
+            from .models import ChatKitThread
+
+            @sync_to_async
+            def get_thread_user_id(thread_id):
+                chatkit_thread = ChatKitThread.objects.filter(thread_id=thread_id).first()
+                if chatkit_thread:
+                    return chatkit_thread.user.id
+                return None
+
+            user_id = await get_thread_user_id(thread.id)
+        except Exception as e:
+            print(f"DEBUG: Error looking up thread in database: {e}")
+
+        # Fallback: try thread metadata (in-memory, from previous requests)
+        if not user_id:
+            if hasattr(thread, 'metadata') and thread.metadata and isinstance(thread.metadata, dict):
+                user_id = thread.metadata.get('user_id')
+
+        # If thread is new (no user_id found), try to get from active user sessions
+        # Since ChatKit doesn't send cookies, we check if there's only one active session
+        # This works for single-user development/testing
+        if not user_id:
+            try:
+                from .models import ChatKitUserSession
+
+                @sync_to_async
+                def get_active_user():
+                    active_sessions = ChatKitUserSession.objects.all()
+                    count = active_sessions.count()
+                    # If exactly one active session, use that user
+                    if count == 1:
+                        session = active_sessions.first()
+                        return session.user.id
+                    return None
+
+                user_id = await get_active_user()
+            except Exception as e:
+                print(f"DEBUG: Error getting active user session: {e}")
+
+            # Fallback: try to get from request (if cookies work)
+            if not user_id:
+                request = context.get("request")
+                if request and hasattr(request, 'user') and request.user.is_authenticated:
+                    user_id = request.user.id
+
+            # If we found a user_id, store it in database and thread metadata
+            if user_id:
+                try:
+                    from .models import ChatKitThread, CustomUser
+
+                    @sync_to_async
+                    def store_thread_user(thread_id, user_id):
+                        user = CustomUser.objects.get(pk=user_id)
+                        ChatKitThread.objects.update_or_create(
+                            thread_id=thread_id,
+                            defaults={'user': user}
+                        )
+
+                    await store_thread_user(thread.id, user_id)
+                except Exception as e:
+                    print(f"DEBUG: Error storing thread in database: {e}")
+
+                # Also store in thread metadata for faster access
+                if not hasattr(thread, 'metadata') or thread.metadata is None:
+                    thread.metadata = {}
+                elif not isinstance(thread.metadata, dict):
+                    thread.metadata = dict(thread.metadata) if hasattr(thread.metadata, '__dict__') else {}
+                thread.metadata['user_id'] = user_id
+                await self.store.save_thread(thread, context)
+
+        # ========================================
+        # FETCH USER-SPECIFIC DATA
+        # ========================================
+        # Example: Fetch user balance and merge into message
+        user_balance = None
+        if user_id:
+            # Use sync_to_async to call Django ORM from async context
+            @sync_to_async
+            def fetch_user_balance(user_id):
+                return get_accounts_by_userid(user_id)  # Your function to get user data
+
+            user_balance = await fetch_user_balance(user_id)
+
+        # Merge user data into user_text if available
+        if user_balance:
+            balance_context = (
+                f"\n\nUser's current financial balances:\n"
+                f"Cash balance: ${user_balance.get('cash_balance', 0):,.2f}\n"
+                f"Savings balance: ${user_balance.get('savings_balance', 0):,.2f}\n"
+                f"Investing/Retirement: ${user_balance.get('investing_retirement', 0):,.2f}\n"
+                f"Total balance: ${user_balance.get('total_balance', 0):,.2f}"
+            )
+            user_text = user_text + balance_context
+
+        # ========================================
+        # CALL YOUR AI WORKFLOW
+        # ========================================
+        try:
+            workflow_input = WorkflowInput(input_as_text=user_text)
+            result = await run_workflow(workflow_input)
+
+            # Extract the response text - handle different return formats
+            if isinstance(result, dict):
+                if "tentativeresponse" in result:
+                    response_text = result["tentativeresponse"]
+                elif "output_parsed" in result and isinstance(result["output_parsed"], dict):
+                    response_text = result["output_parsed"].get("tentativeresponse", "I'm sorry, I couldn't generate a response.")
+                else:
+                    response_text = "I'm sorry, I couldn't generate a response."
+            else:
+                response_text = "I'm sorry, I couldn't generate a response."
+
+            # Create assistant message item
+            assistant_item = AssistantMessageItem(
+                id=_gen_id("msg"),
+                thread_id=thread.id,
+                created_at=datetime.now(),
+                content=[
+                    {
+                        "type": "output_text",
+                        "text": response_text,
+                    }
+                ],
+            )
+
+            # Stream the response
+            yield ThreadItemDoneEvent(item=assistant_item)
+
+            # Save the assistant message to thread history
+            await self.store.add_thread_item(thread.id, assistant_item, context)
+
+        except Exception as e:
+            # Handle errors gracefully
+            error_text = f"I encountered an error: {str(e)}"
+            error_item = AssistantMessageItem(
+                id=_gen_id("msg"),
+                thread_id=thread.id,
+                created_at=datetime.now(),
+                content=[
+                    {
+                        "type": "output_text",
+                        "text": error_text,
+                    }
+                ],
+            )
+            yield ThreadItemDoneEvent(item=error_item)
+            await self.store.add_thread_item(thread.id, error_item, context)
+
+    async def to_message_content(self, _input: Any) -> Any:
+        """Handle file attachments if needed."""
+        raise NotImplementedError("File attachments are not yet supported.")
+
+
+# Singleton instance
+_chatkit_server: SpendoChatKitServer | None = None
+
+
+def get_chatkit_server() -> SpendoChatKitServer:
+    """Get or create the ChatKit server instance."""
+    global _chatkit_server
+    if _chatkit_server is None:
+        _chatkit_server = SpendoChatKitServer()
+    return _chatkit_server
+```
+
+**Key Points:**
+
+- **`sync_to_async`**: Required for all Django ORM calls in async methods. Import from `asgiref.sync`
+- **User Identification Strategy**:
+  1. Check database for existing thread-to-user mapping (persistent)
+  2. Check thread metadata (in-memory cache)
+  3. Check active user sessions (works for single-user scenarios)
+  4. Fallback to request authentication
+- **Persistence**: Once a user is identified, store the mapping in both database and thread metadata
+- **Single-User Limitation**: The active session approach works best when only one user is logged in. For production with multiple concurrent users, consider adding IP address matching or other heuristics
+
+**Important Notes:**
+
+- All Django ORM calls must be wrapped with `sync_to_async` when called from async methods
+- The `ChatKitUserSession` model tracks who is currently logged in
+- The `ChatKitThread` model stores persistent thread-to-user mappings
+- User data is merged into the message text before sending to the AI, so the AI has context
+
 ### Step 4: Add ChatKit Endpoint (`views.py`)
 
 Add the following to `server/Spendo/api/views.py`:
@@ -575,9 +967,36 @@ from chatkit.server import StreamingResult
 
 **Note:** Adjust imports based on what's already in your file. You may need to add or remove imports depending on what's already imported in your `views.py` file.
 
-**Add the endpoint function:**
+**Add helper function and endpoint:**
 
 ```python
+async def _collect_streaming_result(streaming_result):
+    """Collect all items from a StreamingResult async iterator."""
+    items = []
+    # Check if it's an async iterator
+    if hasattr(streaming_result, '__aiter__'):
+        async_iter = streaming_result.__aiter__()
+        try:
+            while True:
+                item = await async_iter.__anext__()
+                items.append(item)
+        except StopAsyncIteration:
+            pass
+    # Check if it's a regular iterator
+    elif hasattr(streaming_result, '__iter__'):
+        for item in streaming_result:
+            items.append(item)
+    else:
+        # Try to iterate it directly
+        try:
+            async for item in streaming_result:
+                items.append(item)
+        except TypeError:
+            # Not iterable, return as single item
+            items = [streaming_result]
+    return items
+
+
 @csrf_exempt
 async def chatkit_endpoint(request):
     """ChatKit SDK endpoint for handling chat requests."""
@@ -599,9 +1018,17 @@ async def chatkit_endpoint(request):
         result = await server.process(payload, {"request": request})
 
         if isinstance(result, StreamingResult):
+            # Collect all items from the async iterator first
+            items = await _collect_streaming_result(result)
+
+            # Create a synchronous generator from collected items
+            def sync_iterator():
+                for item in items:
+                    yield item
+
             # Return streaming response
             response = StreamingHttpResponse(
-                result,
+                sync_iterator(),
                 content_type="text/event-stream"
             )
             response['Cache-Control'] = 'no-cache'
@@ -630,6 +1057,7 @@ async def chatkit_endpoint(request):
 - The endpoint handles both streaming and non-streaming responses
 - GET requests return a health check status
 - The endpoint is decorated with `@csrf_exempt` since ChatKit handles authentication through its own headers
+- **Async Iterator Conversion:** The `_collect_streaming_result` helper function converts the async iterator from `StreamingResult` to a synchronous iterator for `StreamingHttpResponse`. This is necessary because Django's development server (wsgiref) doesn't fully support async streaming. In production with gunicorn, this conversion still works correctly.
 
 ### Step 5: Add URL Route (`urls.py`)
 
@@ -646,10 +1074,65 @@ from .views import create_chatkit_session, get_user_accounts, get_customusers, g
 ```python
 urlpatterns = [
     # ... existing patterns ...
-    path('chatkit/session/', create_chatkit_session, name='create_chatkit_session'),
+    path('chatkit/session/', create_chatkit_session, name='create_chatkit_session'),  # Optional: Only needed if using getClientSecret
     # ChatKit SDK endpoint for custom backend
     path('chatkit/', chatkit_endpoint, name='chatkit_endpoint'),
 ]
+```
+
+**Note:** The `create_chatkit_session` endpoint is optional. It's only needed if you're using `getClientSecret` in the frontend (see Step 3.5 for the recommended user identification approach that doesn't require this endpoint).
+
+### Step 5.5: Create ChatKit Session Endpoint (Optional)
+
+**When to use:** Only if you're using `getClientSecret` in the frontend. The recommended approach (Step 3.5) doesn't require this endpoint.
+
+If you need to create ChatKit sessions manually, add this to `server/Spendo/api/views.py`:
+
+```python
+@api_view(["POST"])
+def create_chatkit_session(request):
+    import requests
+    import os
+
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    workflow_id = "wf_your_workflow_id"  # Replace with your workflow ID
+    url = "https://api.openai.com/v1/chatkit/sessions"
+    headers = {
+        "Authorization": f"Bearer {openai_api_key}",
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "chatkit_beta=v1",
+    }
+
+    # Get user ID from request body or authenticated user
+    user_id_from_body = request.data.get("user_id") if hasattr(request, 'data') else None
+    django_user_id = None
+
+    if user_id_from_body:
+        try:
+            from .models import CustomUser
+            user = CustomUser.objects.get(pk=user_id_from_body)
+            chatkit_user_id = user.username
+            django_user_id = user_id_from_body
+        except CustomUser.DoesNotExist:
+            chatkit_user_id = "anonymous"
+    elif request.user and request.user.is_authenticated:
+        chatkit_user_id = request.user.username
+        django_user_id = request.user.id
+    else:
+        chatkit_user_id = "anonymous"
+
+    data = {
+        "workflow": {"id": workflow_id},
+        "user": chatkit_user_id
+    }
+    response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code == 200:
+        response_data = response.json()
+        client_secret = response_data.get("client_secret")
+        return Response({"client_secret": client_secret})
+    else:
+        return Response({"error": response.text}, status=response.status_code)
 ```
 
 ### Step 6: Configure CORS (`settings.py`)
@@ -813,7 +1296,7 @@ export default MyChat;
 - `theme`: Customizable appearance settings
 - The component uses a floating action button (FAB) pattern for toggling visibility
 
-**Note:** The simple `url` configuration approach is used here. If you need to send CSRF tokens, you would use the `getClientSecret` approach instead (see troubleshooting section).
+**Note:** The simple `url` configuration approach is used here. The recommended user identification approach (Step 3.5) doesn't require `getClientSecret` or the session endpoint - it uses database models to track active users.
 
 ### Step 4: Environment Variables
 
@@ -860,6 +1343,57 @@ To implement persistent storage:
 2. Keep the same method signatures
 3. Ensure pagination (`has_more`, `after`) works correctly
 4. Consider thread archiving and cleanup strategies
+
+---
+
+## User Identification and Context Integration
+
+### Overview
+
+ChatKit doesn't send user information (cookies, user ID, etc.) with its requests, making it challenging to identify which user is making a request. This section explains how to integrate user-specific data into ChatKit responses.
+
+### The Problem
+
+- ChatKit requests don't include authentication cookies
+- ChatKit doesn't send user ID in headers or payload
+- You need to identify users to fetch personalized data (e.g., financial balances, preferences)
+
+### The Solution
+
+Use a combination of:
+
+1. **Active Session Tracking**: Store active user sessions when users log in
+2. **Thread-to-User Mapping**: Persist user ID with each thread in the database
+3. **Fallback Strategies**: Multiple methods to identify users
+
+### Implementation Steps
+
+See **Step 3.5** in the Backend Setup section for complete implementation details.
+
+### How It Works
+
+1. **On Login**: Create `ChatKitUserSession` record
+2. **On ChatKit Request**:
+   - Check if thread already has user_id (from database)
+   - If new thread, check active sessions (single-user scenario)
+   - Store user_id with thread_id for future requests
+3. **Fetch User Data**: Use identified user_id to fetch personalized data
+4. **Merge into Message**: Add user data to message text before sending to AI
+
+### Limitations
+
+- **Single-User Scenarios**: Works best when only one user is logged in
+- **Multiple Users**: For production with concurrent users, consider:
+  - IP address matching
+  - Session token validation
+  - Additional identification heuristics
+
+### Example Use Cases
+
+- Financial applications: Include user's account balances
+- E-commerce: Include user's purchase history
+- Personalization: Include user preferences and settings
+- Multi-tenant: Identify which organization/workspace the user belongs to
 
 ---
 
@@ -1399,6 +1933,8 @@ The progress update will be automatically replaced by the next assistant message
 
 Sometimes it's useful to pass additional information (like `userId`) to the ChatKit server implementation. The `ChatKitServer.process` method accepts a `context` parameter that it passes to the `respond` method and all data store and file store methods.
 
+**Note:** In the Spendo implementation, we don't rely on context for user identification because ChatKit doesn't send cookies. Instead, we use database models (`ChatKitUserSession` and `ChatKitThread`) to identify users. However, context can still be useful for other purposes.
+
 Example usage:
 
 ```python
@@ -1424,21 +1960,7 @@ class MyChatKitServer(ChatKitServer):
         return attachment
 ```
 
-In your Django endpoint, you can extract user information from the request and pass it through:
-
-```python
-@csrf_exempt
-async def chatkit_endpoint(request):
-    # Extract user from Django session or authentication
-    user_id = request.user.id if hasattr(request, 'user') and request.user.is_authenticated else None
-
-    server = get_chatkit_server()
-    result = await server.process(
-        request.body,
-        context={"userId": user_id, "request": request}
-    )
-    # ... handle response
-```
+**Important:** For user identification in ChatKit, use the database-based approach (see Step 3.5) rather than relying on context, as ChatKit requests don't include authentication cookies.
 
 ---
 
@@ -1519,6 +2041,63 @@ def generate_item_id(self, item_type: str, thread: Any, context: dict[str, Any] 
     return _gen_id("msg")
 ```
 
+### Error: ImportError: cannot import name 'assert_never' from 'typing'
+
+**Symptom:** `ImportError: cannot import name 'assert_never' from 'typing'` when running on Python 3.10 or lower
+
+**Solution:** The `openai-chatkit>=1.0.2` package requires Python 3.11 or higher.
+
+1. **For Heroku:** Create `server/Spendo/.python-version` with `3.11`
+2. **For local development:** Upgrade to Python 3.11+ and ensure your virtual environment uses it
+3. **Verify Python version:** Run `python --version` to confirm you're using 3.11+
+
+### Error: StreamingHttpResponse with async iterator warning
+
+**Symptom:** Warning: `StreamingHttpResponse must consume asynchronous iterators in order to serve them synchronously`
+
+**Solution:** This is handled by the `_collect_streaming_result` helper function in `views.py`. The function converts the async iterator to a synchronous one. The warning may still appear in development but functionality works correctly. In production with gunicorn, this works without warnings.
+
+### Error: SynchronousOnlyOperation - Django ORM in async context
+
+**Symptom:** `django.core.exceptions.SynchronousOnlyOperation: You cannot call this from an async context - use a thread or sync_to_async.`
+
+**Solution:** All Django ORM calls in async methods must be wrapped with `sync_to_async`:
+
+```python
+from asgiref.sync import sync_to_async
+
+# In an async method:
+@sync_to_async
+def fetch_user_data(user_id):
+    return YourModel.objects.get(pk=user_id)
+
+user_data = await fetch_user_data(user_id)
+```
+
+**Common places this is needed:**
+
+- Database queries in `chatkit_server.py` `respond()` method
+- Any Django ORM calls in async ChatKit methods
+- User data fetching functions called from async context
+
+### User Identification Not Working
+
+**Symptom:** User balance or other user-specific data is not being included in ChatKit responses.
+
+**Solution:** Ensure you've:
+
+1. Created the `ChatKitThread` and `ChatKitUserSession` models
+2. Run migrations: `python manage.py makemigrations && python manage.py migrate`
+3. Updated `LoginView` to create `ChatKitUserSession` on login
+4. Updated `LogoutView` to delete `ChatKitUserSession` on logout
+5. Wrapped all Django ORM calls with `sync_to_async` in the `respond()` method
+
+**For production with multiple concurrent users:** The single active session approach works for development but may need enhancement. Consider:
+
+- IP address matching
+- Session token validation
+- More sophisticated user identification heuristics
+
 ### Error: 500 Internal Server Error
 
 **Common Causes:**
@@ -1527,6 +2106,7 @@ def generate_item_id(self, item_type: str, thread: Any, context: dict[str, Any] 
 2. Incorrect Result object structure
 3. Async/sync method mismatches
 4. Missing imports in `views.py`
+5. Incorrect response extraction from workflow result (check for typos like "tentativeresponseee" vs "tentativeresponse")
 
 **Debug Steps:**
 
@@ -1534,6 +2114,7 @@ def generate_item_id(self, item_type: str, thread: Any, context: dict[str, Any] 
 2. Verify all imports are correct
 3. Ensure `chatkit_endpoint` is properly decorated with `@csrf_exempt`
 4. Confirm `get_chatkit_server()` is imported in `views.py`
+5. Verify the response extraction logic handles all return formats from your workflow
 
 ### Frontend: ChatKit Not Loading
 
@@ -1802,6 +2383,8 @@ async def respond(...):
 | `memory_store.py`                      | ~95%        | Storage backend (optional)        |
 | `chatkit_server.py` structure          | ~80%        | None (copy structure)             |
 | `chatkit_server.py` `respond()` method | ~20%        | AI integration, response format   |
+| User identification models             | ~90%        | Adapt to your user model          |
+| Login/Logout integration               | ~85%        | Match your auth system            |
 | Endpoint (`views.py`)                  | ~90%        | Error handling (optional)         |
 | CORS config                            | ~100%       | Domain-specific headers (minimal) |
 
@@ -1813,12 +2396,18 @@ async def respond(...):
 - [ ] Update class name (`YourProjectChatKitServer`)
 - [ ] Update imports (remove Spendo-specific imports)
 - [ ] Update singleton function name if needed
+- [ ] **If you need user identification:**
+  - [ ] Create `ChatKitThread` and `ChatKitUserSession` models (adapt to your user model)
+  - [ ] Update login/logout views to track active sessions
+  - [ ] Implement user identification logic in `respond()` method
+  - [ ] Wrap all Django ORM calls with `sync_to_async`
 - [ ] Test with your specific workflow
 
 **Bottom Line:**
 
 - `memory_store.py`: Copy and use (or swap storage backend)
 - `chatkit_server.py`: Copy structure, customize `respond()` method
+- User identification: Copy the pattern, adapt to your user model and data needs
 - Everything else: Mostly reusable with minimal changes
 
 ---
@@ -1833,9 +2422,11 @@ async def respond(...):
 ### Backend Files Modified:
 
 - `server/Spendo/requirements.txt` - Added `openai-chatkit>=1.0.2,<2`
-- `server/Spendo/api/views.py` - Added `chatkit_endpoint` function
-- `server/Spendo/api/urls.py` - Added `/chatkit/` route
+- `server/Spendo/api/models.py` - Added `ChatKitThread` and `ChatKitUserSession` models for user identification
+- `server/Spendo/api/views.py` - Added `chatkit_endpoint` function, `_collect_streaming_result` helper, and updated `LoginView`/`LogoutView` to track active sessions
+- `server/Spendo/api/urls.py` - Added `/chatkit/` route (and optionally `/chatkit/session/` if using getClientSecret)
 - `server/Spendo/Spendo/settings.py` - Added `CORS_ALLOW_HEADERS`
+- `server/Spendo/.python-version` - Created with `3.11` for Heroku deployment (Python 3.11+ required)
 
 ### Frontend Files Modified:
 

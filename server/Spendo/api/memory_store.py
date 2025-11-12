@@ -84,6 +84,20 @@ class SimpleMemoryStore:
     async def save_thread(
         self, thread: ThreadMetadata, context: dict[str, Any]
     ) -> None:
+        # Store user ID in thread metadata if available in context and not already set
+        if not hasattr(thread, 'metadata') or thread.metadata is None:
+            thread.metadata = {}
+        elif not isinstance(thread.metadata, dict):
+            # If metadata is not a dict, convert it
+            thread.metadata = dict(thread.metadata) if hasattr(thread.metadata, '__dict__') else {}
+        
+        # Get user ID from context if available
+        request = context.get("request") if context else None
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            user_id = request.user.id
+            if 'user_id' not in thread.metadata:
+                thread.metadata['user_id'] = user_id
+        
         self._threads[thread.id] = thread
     
     async def load_thread_items(

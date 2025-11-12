@@ -48,4 +48,30 @@ class Transaction(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='transactions')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions', null=True)
     transactiontype = models.ForeignKey(TransactionType, on_delete=models.CASCADE, related_name='transactions')
+
+class ChatKitThread(models.Model):
+    """Store mapping of ChatKit thread_id to Django user_id for persistent user identification."""
+    thread_id = models.CharField(max_length=255, unique=True, primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='chatkit_threads')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'chatkit_threads'
+        indexes = [
+            models.Index(fields=['thread_id']),
+            models.Index(fields=['user']),
+        ]
+
+class ChatKitUserSession(models.Model):
+    """Store active user sessions for ChatKit - created on login, deleted on logout."""
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='chatkit_session')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'chatkit_user_sessions'
+        indexes = [
+            models.Index(fields=['user']),
+        ]
     
