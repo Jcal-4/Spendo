@@ -1,6 +1,7 @@
 # Proposed Project Structure
 
 ## Current Issues
+
 1. **Backend**: Confusing nested `server/Spendo/Spendo/` structure
 2. **Frontend**: `client/app/` is reasonable but could be clearer
 3. **Configuration files**: Scattered in root directory
@@ -143,31 +144,37 @@ Spendo/
 ## Key Changes Explained
 
 ### 1. Backend Structure
+
 - **`server/Spendo` → `backend/`**: Clearer naming convention
 - **`server/Spendo/Spendo/` → `backend/spendo/`**: Flattened Django project structure
 - **Benefits**: No confusion about nested directories, easier navigation
 
 ### 2. Frontend Structure
+
 - **`client/app` → `frontend/`**: Removes unnecessary nesting
 - **`Homepage/` → `pages/HomePage/`**: Standard naming for page components
 - **`authentication-page/` → `pages/AuthenticationPage/`**: Consistent casing and location
 - **Benefits**: Follows React conventions, easier to find pages
 
 ### 3. Configuration Organization
+
 - **`config/` folder**: All Docker, database, and service configs in one place
 - **Benefits**: Easy to find all configuration files, better for deployment
 
 ### 4. Documentation
+
 - **`docs/` folder**: All markdown documentation files
 - **Benefits**: Keeps root directory clean, easy to find documentation
 
 ### 5. Docker Files
+
 - **`docker/` folder**: Production deployment files
 - **Benefits**: Separates development and production Docker configs
 
 ## Files That Need Path Updates
 
 After reorganization, these files will need path updates:
+
 1. `docker-compose.yml` - Update all paths to use new structure
 2. `package.json` (root) - Update heroku-postbuild script paths
 3. `Dockerfile` (root) - Update COPY paths if keeping at root, or move to docker/
@@ -191,5 +198,3 @@ After reorganization, these files will need path updates:
 ✅ **Easier navigation**: Everything has a logical place  
 ✅ **Scalability**: Easy to add more configs, docs, or services  
 ✅ **Team-friendly**: New developers can understand structure quickly
-
-
