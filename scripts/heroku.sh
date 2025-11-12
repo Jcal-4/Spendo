@@ -127,11 +127,23 @@ case "$COMMAND" in
         fi
         
         # Configure buildpacks - use Node.js first for frontend build, then Python for backend
-        print_info "Configuring buildpacks..."
-        heroku buildpacks:clear -a "$APP_NAME" 2>/dev/null || true
-        heroku buildpacks:add heroku/nodejs -a "$APP_NAME" 2>/dev/null || true
-        heroku buildpacks:add heroku/python -a "$APP_NAME" 2>/dev/null || true
+        # IMPORTANT: Remove any monorepo buildpacks that look for server/Spendo
+        print_info "Configuring buildpacks (removing any monorepo buildpacks)..."
+        heroku buildpacks:clear -a "$APP_NAME"
+        
+        # Remove any monorepo buildpack that might be cached
+        heroku buildpacks:remove https://github.com/lstoll/heroku-buildpack-monorepo.git -a "$APP_NAME" 2>/dev/null || true
+        heroku buildpacks:remove https://github.com/croaky/heroku-buildpack-monorepo.git -a "$APP_NAME" 2>/dev/null || true
+        
+        # Add only standard buildpacks
+        heroku buildpacks:add heroku/nodejs -a "$APP_NAME"
+        heroku buildpacks:add heroku/python -a "$APP_NAME"
+        
+        # Remove BUILD_SUBDIR if it exists (causes issues)
+        heroku config:unset BUILD_SUBDIR -a "$APP_NAME" 2>/dev/null || true
+        
         print_info "Buildpacks configured: Node.js (for frontend build) then Python (for backend)"
+        print_info "Monorepo buildpacks removed - using standard buildpacks only"
         
         print_info "Pushing to Heroku (this will trigger build)..."
         git push heroku main || git push heroku master
