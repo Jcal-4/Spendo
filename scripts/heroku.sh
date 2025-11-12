@@ -126,12 +126,12 @@ case "$COMMAND" in
             heroku git:remote -a "$APP_NAME"
         fi
         
-        # Configure monorepo buildpack if not already set
-        print_info "Configuring buildpacks for monorepo structure..."
+        # Configure buildpacks - use Node.js first for frontend build, then Python for backend
+        print_info "Configuring buildpacks..."
         heroku buildpacks:clear -a "$APP_NAME" 2>/dev/null || true
-        heroku buildpacks:add https://github.com/croaky/heroku-buildpack-monorepo.git -a "$APP_NAME" 2>/dev/null || true
-        heroku buildpacks:add https://github.com/heroku/heroku-buildpack-python.git -a "$APP_NAME" 2>/dev/null || true
-        heroku config:set BUILD_SUBDIR=backend -a "$APP_NAME" 2>/dev/null || true
+        heroku buildpacks:add heroku/nodejs -a "$APP_NAME" 2>/dev/null || true
+        heroku buildpacks:add heroku/python -a "$APP_NAME" 2>/dev/null || true
+        print_info "Buildpacks configured: Node.js (for frontend build) then Python (for backend)"
         
         print_info "Pushing to Heroku (this will trigger build)..."
         git push heroku main || git push heroku master
