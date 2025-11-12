@@ -21,9 +21,38 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 import json
 import os
+import asyncio
 from openai import OpenAI
 from .chatkit_server import get_chatkit_server
 from chatkit.server import StreamingResult
+
+
+async def _collect_streaming_result(streaming_result):
+    """Collect all items from a StreamingResult async iterator."""
+    items = []
+    # Check if it's an async iterator
+    if hasattr(streaming_result, '__aiter__'):
+        async_iter = streaming_result.__aiter__()
+        try:
+            while True:
+                item = await async_iter.__anext__()
+                items.append(item)
+        except StopAsyncIteration:
+            pass
+    # Check if it's a regular iterator
+    elif hasattr(streaming_result, '__iter__'):
+        for item in streaming_result:
+            items.append(item)
+    else:
+        # Try to iterate it directly
+        try:
+            async for item in streaming_result:
+                items.append(item)
+        except TypeError:
+            # Not iterable, return as single item
+            items = [streaming_result]
+    return items
+
 
 @csrf_exempt
 async def chatkit_endpoint(request):
@@ -46,9 +75,17 @@ async def chatkit_endpoint(request):
         result = await server.process(payload, {"request": request})
         
         if isinstance(result, StreamingResult):
+            # Collect all items from the async iterator first
+            items = await _collect_streaming_result(result)
+            
+            # Create a synchronous generator from collected items
+            def sync_iterator():
+                for item in items:
+                    yield item
+            
             # Return streaming response
             response = StreamingHttpResponse(
-                result,
+                sync_iterator(),
                 content_type="text/event-stream"
             )
             response['Cache-Control'] = 'no-cache'

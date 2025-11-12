@@ -59,8 +59,18 @@ class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
             workflow_input = WorkflowInput(input_as_text=user_text)
             result = await run_workflow(workflow_input)
             
-            # Extract the response text
-            response_text = result.get("tentativeresponse", "I'm sorry, I couldn't generate a response.")
+            # Extract the response text - handle different return formats
+            if isinstance(result, dict):
+                # Check if result has tentativeresponse directly
+                if "tentativeresponse" in result:
+                    response_text = result["tentativeresponse"]
+                # Check if result has output_parsed (from financial_reasoning_result)
+                elif "output_parsed" in result and isinstance(result["output_parsed"], dict):
+                    response_text = result["output_parsed"].get("tentativeresponse", "I'm sorry, I couldn't generate a response.")
+                else:
+                    response_text = "I'm sorry, I couldn't generate a response."
+            else:
+                response_text = "I'm sorry, I couldn't generate a response."
             
             # Create assistant message item
             assistant_item = AssistantMessageItem(

@@ -173,7 +173,7 @@ async def run_workflow(workflow_input: WorkflowInput):
         "output_text": agent_result_temp.final_output_as(str)
       }
       end_result = {
-        "tentativeresponseee": state["tentativeresponse"],
+        "tentativeresponse": state["tentativeresponse"],
         "isfinancequestion": state["isfinancequestion"]
       }
       return end_result
