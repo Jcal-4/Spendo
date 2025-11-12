@@ -84,19 +84,17 @@ class SimpleMemoryStore:
     async def save_thread(
         self, thread: ThreadMetadata, context: dict[str, Any]
     ) -> None:
-        # Store user ID in thread metadata if available in context and not already set
+        # Ensure metadata is a dict
         if not hasattr(thread, 'metadata') or thread.metadata is None:
             thread.metadata = {}
         elif not isinstance(thread.metadata, dict):
             # If metadata is not a dict, convert it
             thread.metadata = dict(thread.metadata) if hasattr(thread.metadata, '__dict__') else {}
         
-        # Get user ID from context if available
-        request = context.get("request") if context else None
-        if request and hasattr(request, 'user') and request.user.is_authenticated:
-            user_id = request.user.id
-            if 'user_id' not in thread.metadata:
-                thread.metadata['user_id'] = user_id
+        # Note: We don't access request.user here because:
+        # 1. It triggers SynchronousOnlyOperation errors in async contexts
+        # 2. User identification is handled in chatkit_server.py using database models
+        # 3. The user_id is already stored in thread.metadata by chatkit_server.py before calling save_thread
         
         self._threads[thread.id] = thread
     

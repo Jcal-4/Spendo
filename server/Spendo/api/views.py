@@ -126,7 +126,9 @@ async def chatkit_endpoint(request):
                 )
                 response['Cache-Control'] = 'no-cache'
                 response['X-Accel-Buffering'] = 'no'
-                response['Connection'] = 'keep-alive'
+                # Note: Don't set 'Connection: keep-alive' - it's a hop-by-hop header
+                # that causes errors with Django's development server (wsgiref)
+                # SSE connections are kept alive by default
                 print("DEBUG: Returning StreamingHttpResponse")
                 return response
             except Exception as stream_error:

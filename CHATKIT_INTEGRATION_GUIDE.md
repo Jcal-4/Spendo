@@ -229,12 +229,10 @@ class SimpleMemoryStore:
             # If metadata is not a dict, convert it
             thread.metadata = dict(thread.metadata) if hasattr(thread.metadata, '__dict__') else {}
 
-        # Get user ID from context if available
-        request = context.get("request") if context else None
-        if request and hasattr(request, 'user') and request.user.is_authenticated:
-            user_id = request.user.id
-            if 'user_id' not in thread.metadata:
-                thread.metadata['user_id'] = user_id
+        # Note: We don't access request.user here because:
+        # 1. It triggers SynchronousOnlyOperation errors in async contexts
+        # 2. User identification is handled in chatkit_server.py using database models
+        # 3. The user_id is already stored in thread.metadata by chatkit_server.py before calling save_thread
 
         self._threads[thread.id] = thread
 
@@ -809,10 +807,18 @@ class SpendoChatKitServer(ChatKitServer[dict[str, Any]]):
                 print(f"DEBUG: Error getting active user session: {e}")
 
             # Fallback: try to get from request (if cookies work)
+            # Note: This may not work reliably in async contexts if request.user triggers a database query
+            # It's included as a last resort fallback, but the database-backed approach above should handle most cases
             if not user_id:
                 request = context.get("request")
                 if request and hasattr(request, 'user') and request.user.is_authenticated:
-                    user_id = request.user.id
+                    # Accessing request.user can trigger database queries, but it's often cached
+                    # If this causes SynchronousOnlyOperation errors, remove this fallback
+                    try:
+                        user_id = request.user.id
+                    except Exception as e:
+                        print(f"DEBUG: Error accessing request.user: {e}")
+                        user_id = None
 
             # If we found a user_id, store it in database and thread metadata
             if user_id:
@@ -1016,6 +1022,12 @@ async def chatkit_endpoint(request):
         if not payload:
             return JsonResponse({"error": "Empty payload"}, status=400)
 
+        # Note: We don't access request.session here because:
+        # 1. It requires sync_to_async (sessions use database queries)
+        # 2. We use database-backed user identification instead (ChatKitThread/ChatKitUserSession)
+        # 3. ChatKit doesn't send cookies anyway, so sessions won't work
+        # User identification happens in chatkit_server.py using database models
+
         result = await server.process(payload, {"request": request})
 
         if isinstance(result, StreamingResult):
@@ -1034,6 +1046,9 @@ async def chatkit_endpoint(request):
             )
             response['Cache-Control'] = 'no-cache'
             response['X-Accel-Buffering'] = 'no'
+            # Note: Do NOT set 'Connection: keep-alive' header - it's a hop-by-hop header
+            # that causes errors with Django's development server (wsgiref).
+            # SSE connections are kept alive by default, so this header is not needed.
             return response
 
         if hasattr(result, "json"):
@@ -1059,6 +1074,8 @@ async def chatkit_endpoint(request):
 - GET requests return a health check status
 - The endpoint is decorated with `@csrf_exempt` since ChatKit handles authentication through its own headers
 - **Async Iterator Conversion:** The `_collect_streaming_result` helper function converts the async iterator from `StreamingResult` to a synchronous iterator for `StreamingHttpResponse`. This is necessary because Django's development server (wsgiref) doesn't fully support async streaming. In production with gunicorn, this conversion still works correctly.
+- **No Session Access:** Do NOT access `request.session` in the async endpoint - it triggers synchronous database queries which cause `SynchronousOnlyOperation` errors. User identification is handled in `chatkit_server.py` using database models (`ChatKitThread` and `ChatKitUserSession`).
+- **No Connection Header:** Do NOT set the `Connection: keep-alive` header - it's a hop-by-hop header that causes `AssertionError` with Django's development server (wsgiref). Server-Sent Events (SSE) connections are kept alive by default, so this header is not needed.
 
 ### Step 5: Add URL Route (`urls.py`)
 
@@ -2505,6 +2522,42 @@ After deployment, verify:
 **Issue: `SynchronousOnlyOperation` errors**
 
 - **Solution:** All Django ORM calls are already wrapped with `sync_to_async` in the implementation - this should work correctly on Heroku with gunicorn
+
+**Common causes:**
+
+- Accessing `request.session` in async functions (sessions ALWAYS use database queries) - **This will always fail**
+- Calling Django ORM methods directly without `sync_to_async` wrapper
+- Accessing `request.user` in async context (may trigger database queries if user isn't cached) - **May fail depending on Django version and middleware**
+
+**Fix:**
+
+- **For sessions:** Never access `request.session` in async endpoints. Use the database-backed approach (ChatKitThread/ChatKitUserSession) instead.
+- **For request.user:** Wrap with `sync_to_async` if needed, or rely on the database-backed approach which is more reliable.
+- **For ORM calls:** Always wrap with `sync_to_async` when called from async methods.
+
+**Issue: `AssertionError: Hop-by-hop header, 'Connection: keep-alive', not allowed`**
+
+**Symptom:** `AssertionError: Hop-by-hop header, 'Connection: keep-alive', not allowed` when using ChatKit locally with Django's development server (wsgiref).
+
+**Cause:** The `Connection: keep-alive` header is a hop-by-hop header that Django's development server (wsgiref) doesn't allow. This header was added to support Server-Sent Events (SSE), but it's not needed.
+
+**Fix:** Remove the `Connection: keep-alive` header from your `StreamingHttpResponse`. SSE connections are kept alive by default, so this header is unnecessary.
+
+```python
+# ❌ Don't do this:
+response['Connection'] = 'keep-alive'
+
+# ✅ Do this instead:
+response = StreamingHttpResponse(
+    sync_iterator(),
+    content_type="text/event-stream"
+)
+response['Cache-Control'] = 'no-cache'
+response['X-Accel-Buffering'] = 'no'
+# Connection header not needed - SSE keeps connection alive by default
+```
+
+**Note:** This error only occurs with Django's development server (wsgiref). Production servers (gunicorn, uvicorn) handle this differently, but it's still best practice to omit this header.
 
 **Issue: ChatKit Refreshes Without Showing Response on Heroku**
 
